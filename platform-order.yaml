@@ -1,0 +1,29 @@
+# Possible actions: new-order, update-order
+action: new-order
+
+git:
+
+  # Possible options: github, gitlab, gite-a
+  tool: github
+  # the organization in your git system
+  org: kevvlvl
+  # repository name
+  repo: my-api-app
+  # base branch
+  branch: main
+
+golden-path:
+  # The name of the golden path to select if the desire is not to start with an empty git repo
+  name: gochi-app
+  # Optional: if specified, you will pull the specific version of this golden path. Otherwise, it pulls the latest.
+  version: 1.0
+
+deployment:
+  # Target deployment is kubernetes
+  kubernetes:
+    # Possible options depend on the cluster URL:
+    cluster-url:
+    # Namespace where to deploy the app. This namespace will be created if it does not exist
+    namespace: apps
+    # Enables centralized logging into Grafana loki
+    logs: true
