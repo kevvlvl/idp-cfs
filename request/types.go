@@ -1,16 +1,18 @@
 package request
 
 type Contract struct {
-	Git struct {
+	Code struct {
 		Tool   string `yaml:"tool"`
 		Org    string `yaml:"org"`
 		Repo   string `yaml:"repo"`
 		Branch string `yaml:"branch"`
-	} `yaml:"git"`
+	} `yaml:"code"`
 
 	GoldenPath struct {
-		Name    string `yaml:"name"`
-		Version string `yaml:"version"`
+		Git    string `yaml:"git"`
+		Name   string `yaml:"name"`
+		Branch string `yaml:"branch"`
+		Tag    string `yaml:"tag"`
 	} `yaml:"golden-path"`
 
 	Deployment struct {

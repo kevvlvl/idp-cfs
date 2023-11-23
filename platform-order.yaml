@@ -1,7 +1,7 @@
 # Possible actions: new-request, update-request
 action: new-request
 
-git:
+code:
   # Possible options: github, gitlab, gite-a
   tool: github
   # the organization in your git system
@@ -11,11 +11,15 @@ git:
   # base branch
   branch: main
 
+# Optional: Define an existing golden path (GP), otherwise start with an empty git repo
 golden-path:
-  # The name of the golden path to select if the desire is not to start with an empty git repo
+  # URL of the git repo where the gp is found
+  git: github.com:kevvlvl/idp-cfs.git
+  # The name of the golden path to choose
   name: gochi-app
-  # Optional: if specified, you will pull the specific version of this golden path. Otherwise, it pulls the latest.
-  version: 1.0
+  # Optional: branch name where the gp resides. Default = refs/heads/main
+  branch: alpha
+  # Optional: tag to specify a stable version. Default = latest commit
 
 deployment:
   # Target deployment is kubernetes
