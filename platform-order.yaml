@@ -2,7 +2,6 @@
 action: new-order
 
 git:
-
   # Possible options: github, gitlab, gite-a
   tool: github
   # the organization in your git system
