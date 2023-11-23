@@ -1,5 +1,5 @@
-# Possible actions: new-order, update-order
-action: new-order
+# Possible actions: new-request, update-request
+action: new-request
 
 git:
   # Possible options: github, gitlab, gite-a
