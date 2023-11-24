@@ -7,19 +7,22 @@ import (
 	"os"
 )
 
-func Login() *GithubClient {
+func Github() GithubClient {
 
 	githubPat := os.Getenv("GITHUB_PAT")
 	client := getClient(githubPat)
 
-	return (*GithubClient)(client)
+	return GithubClient{
+		Client: client,
+		User:   getUser(client),
+	}
 }
 
 func (g *GithubClient) GetOrganization(name string) Organization {
 
 	ctx := context.Background()
 
-	org, resp, err := g.Organizations.Get(ctx, name)
+	org, resp, err := g.Client.Organizations.Get(ctx, name)
 
 	valid := validateApiResponse(resp, err, "Error trying to get organization")
 	if !valid {
@@ -34,12 +37,11 @@ func (g *GithubClient) GetOrganization(name string) Organization {
 	}
 }
 
-func (g *GithubClient) GetRepositories(name string) Repository {
+func (g *GithubClient) GetRepository(name string) Repository {
 
 	ctx := context.Background()
-	u := g.getUser()
 
-	repo, resp, err := g.Repositories.Get(ctx, *u.Login, name)
+	repo, resp, err := g.Client.Repositories.Get(ctx, *g.User.Login, name)
 
 	valid := validateApiResponse(resp, err, "Error trying to get Repository")
 	if !valid {
@@ -61,17 +63,17 @@ func (g *GithubClient) GetRepositories(name string) Repository {
 	}
 }
 
-func (g *GithubClient) getUser() *GithubUser {
+func getUser(c *github.Client) *github.User {
 
 	ctx := context.Background()
 
-	user, resp, err := g.Users.Get(ctx, "")
+	user, resp, err := c.Users.Get(ctx, "")
 	if err != nil {
 		log.Error().Msgf("Error trying to get the User. Response = %v, Error = %v", resp, err)
 		return nil
 	}
 
-	return (*GithubUser)(user)
+	return user
 }
 
 func getClient(pat string) *github.Client {
