@@ -14,6 +14,7 @@ func Load(filePath string) *Contract {
 
 	if err != nil {
 		log.Error().Msgf("Error trying to read request file: %v", err)
+		return nil
 	}
 
 	err = yaml.Unmarshal(buf, order)
