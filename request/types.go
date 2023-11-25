@@ -13,6 +13,7 @@ type Contract struct {
 		Name   string `yaml:"name"`
 		Branch string `yaml:"branch"`
 		Tag    string `yaml:"tag"`
+		Path   string `yaml:"path"`
 	} `yaml:"golden-path"`
 
 	Deployment struct {

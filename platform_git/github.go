@@ -7,45 +7,64 @@ import (
 	"os"
 )
 
-func Github() GithubClient {
+func GetGithubCode() *GitCode {
 
-	githubPat := os.Getenv("GITHUB_PAT")
-	client := getClient(githubPat)
+	pat := os.Getenv("GITHUB_PAT")
+	client := github.NewClient(nil).WithAuthToken(pat)
 
-	return GithubClient{
-		Client: client,
-		User:   getUser(client),
+	user, resp, err := client.Users.Get(context.Background(), "")
+
+	valid := validateApiResponse(resp, err, "Error trying to get User")
+	if !valid {
+		return nil
+	}
+
+	return &GitCode{
+		GithubClient: client,
+		GithubUser:   user,
+		Organization: nil,
+		OrgExists:    false,
+		Repository:   nil,
+		RepoExists:   false,
 	}
 }
 
-func (g *GithubClient) GetOrganization(name string) Organization {
+func GetGithubUser(c *github.Client) *github.User {
 
-	ctx := context.Background()
+	user, resp, err := c.Users.Get(context.Background(), "")
 
-	org, resp, err := g.Client.Organizations.Get(ctx, name)
+	valid := validateApiResponse(resp, err, "Error trying to get User")
+	if !valid {
+		return nil
+	}
+
+	return user
+}
+
+func (c *GitCode) GetOrganization(organizationName string) (*Organization, bool) {
+
+	org, resp, err := c.GithubClient.Organizations.Get(context.Background(), organizationName)
 
 	valid := validateApiResponse(resp, err, "Error trying to get organization")
 	if !valid {
-		return Organization{}
+		return nil, false
 	}
 
 	log.Debug().Msgf("Organization found %+v", org)
 
-	return Organization{
+	return &Organization{
 		Name:    org.Name,
 		Company: org.Company,
-	}
+	}, true
 }
 
-func (g *GithubClient) GetRepository(name string) Repository {
+func (c *GitCode) GetRepository(name string) (*Repository, bool) {
 
-	ctx := context.Background()
-
-	repo, resp, err := g.Client.Repositories.Get(ctx, *g.User.Login, name)
+	repo, resp, err := c.GithubClient.Repositories.Get(context.Background(), *c.GithubUser.Login, name)
 
 	valid := validateApiResponse(resp, err, "Error trying to get Repository")
 	if !valid {
-		return Repository{}
+		return nil, false
 	}
 
 	log.Debug().Msgf("Repository found %+v", repo)
@@ -55,27 +74,10 @@ func (g *GithubClient) GetRepository(name string) Repository {
 		repoOrg = *repo.Organization.Name
 	}
 
-	return Repository{
+	return &Repository{
 		Name:         repo.Name,
 		Organization: &repoOrg,
 		Owner:        repo.Owner.Name,
 		URL:          repo.URL,
-	}
-}
-
-func getUser(c *github.Client) *github.User {
-
-	ctx := context.Background()
-
-	user, resp, err := c.Users.Get(ctx, "")
-	if err != nil {
-		log.Error().Msgf("Error trying to get the User. Response = %v, Error = %v", resp, err)
-		return nil
-	}
-
-	return user
-}
-
-func getClient(pat string) *github.Client {
-	return github.NewClient(nil).WithAuthToken(pat)
+	}, true
 }

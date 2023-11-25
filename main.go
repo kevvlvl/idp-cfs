@@ -19,9 +19,8 @@ func main() {
 	// does it contain code?
 	// push golden path code into newly created repo at desired branch
 
-	ghc := platform_git.Github()
-
-	ghc.GetOrganization("kevvlvl")
-	ghc.GetRepository("idp-cfs")
+	code := platform_git.GetGithubCode()
+	code.Organization, code.OrgExists = code.GetOrganization("kevvlvl")
+	code.Repository, code.RepoExists = code.GetRepository("idp-cfs")
 
 }

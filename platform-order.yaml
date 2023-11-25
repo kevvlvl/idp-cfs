@@ -17,15 +17,18 @@ golden-path:
   git: github.com:kevvlvl/idp-cfs.git
   # The name of the golden path to choose
   name: gochi-app
-  # Optional: branch name where the gp resides. Default = refs/heads/main
+  # The path where the golden path is located
+  path: ./gp/golang/gochi-app
+  # branch name where the gp resides.
   branch: alpha
   # Optional: tag to specify a stable version. Default = latest commit
+  # tag: release_1.0
 
 deployment:
   # Target deployment is kubernetes
   kubernetes:
     # Possible options depend on the cluster URL:
-    cluster-url:
+    cluster-url: k8s.cluster.local
     # Namespace where to deploy the app. This namespace will be created if it does not exist
     namespace: apps
     # Enables centralized logging into Grafana loki

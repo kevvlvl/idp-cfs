@@ -2,9 +2,13 @@ package platform_git
 
 import "github.com/google/go-github/v56/github"
 
-type GithubClient struct {
-	Client *github.Client
-	User   *github.User
+type GitCode struct {
+	GithubClient *github.Client
+	GithubUser   *github.User
+	Organization *Organization
+	OrgExists    bool
+	Repository   *Repository
+	RepoExists   bool
 }
 
 type Organization struct {
