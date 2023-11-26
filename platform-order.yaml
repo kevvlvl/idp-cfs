@@ -1,5 +1,5 @@
-# Possible actions: new-request, update-request
-action: new-request
+# Possible actions: new-contract, update-contract
+action: new-contract
 
 code:
   # Possible options: github, gitlab, gite-a

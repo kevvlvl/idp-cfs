@@ -2,25 +2,28 @@ package main
 
 import (
 	"github.com/rs/zerolog/log"
+	"idp-cfs/contract"
 	platform_git "idp-cfs/platform_git"
-	"idp-cfs/request"
+	"idp-cfs/rules"
 )
 
 func main() {
 
-	c := request.Load("platform-order.yaml")
+	// TODO: receive in Request Body (directly or through CLI)
+	contractFile := "platform-order.yaml"
+
+	c := contract.Load(contractFile)
 	log.Info().Msgf("Contract loaded: %+v", c)
 
-	// Initiate validator:
-	// valid git tool?
-	// Connect to git
-	// Can I create a repo?
-	// valid golden path git path (using a generic git client)
-	// does it contain code?
-	// push golden path code into newly created repo at desired branch
-
 	code := platform_git.GetGithubCode()
-	code.Organization, code.OrgExists = code.GetOrganization("kevvlvl")
-	code.Repository, code.RepoExists = code.GetRepository("idp-cfs")
 
+	p := rules.GetProcessor(c, code, nil)
+	success := p.DryRun()
+
+	if success {
+		log.Info().Msgf("Successfuly completed a dry-run without errors. Will execute real actions now.")
+	}
+
+	//code.Organization, code.OrgExists = code.GetOrganization("kevvlvl")
+	//code.Repository, code.RepoExists = code.GetRepository("idp-cfs")
 }
