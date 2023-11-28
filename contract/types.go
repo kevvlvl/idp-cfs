@@ -1,6 +1,8 @@
 package contract
 
 type Contract struct {
+	Action string `yaml:"action"`
+
 	Code struct {
 		Tool   string `yaml:"tool"`
 		Org    string `yaml:"org"`

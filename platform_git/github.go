@@ -2,6 +2,8 @@ package platform_git
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/google/go-github/v56/github"
 	"github.com/rs/zerolog/log"
 	"os"
@@ -41,13 +43,13 @@ func GetGithubUser(c *github.Client) *github.User {
 	return user
 }
 
-func (c *GitCode) GetOrganization(organizationName string) (*Organization, bool) {
+func (c *GitCode) GetOrganization(organizationName string) (*Organization, error) {
 
 	org, resp, err := c.GithubClient.Organizations.Get(context.Background(), organizationName)
 
 	valid := validateApiResponse(resp, err, "Error trying to get organization")
 	if !valid {
-		return nil, false
+		return nil, errors.New(fmt.Sprintf("Error trying to get organization. Error: %v", err))
 	}
 
 	log.Debug().Msgf("Organization found %+v", org)
@@ -55,16 +57,16 @@ func (c *GitCode) GetOrganization(organizationName string) (*Organization, bool)
 	return &Organization{
 		Name:    org.Name,
 		Company: org.Company,
-	}, true
+	}, nil
 }
 
-func (c *GitCode) GetRepository(name string) (*Repository, bool) {
+func (c *GitCode) GetRepository(name string) (*Repository, error) {
 
 	repo, resp, err := c.GithubClient.Repositories.Get(context.Background(), *c.GithubUser.Login, name)
 
-	valid := validateApiResponse(resp, err, "Error trying to get Repository")
+	valid := validateApiResponse(resp, err, "Error trying to get repository")
 	if !valid {
-		return nil, false
+		return nil, errors.New(fmt.Sprintf("Error trying to get repository. Error: %v", err))
 	}
 
 	log.Debug().Msgf("Repository found %+v", repo)
@@ -79,5 +81,5 @@ func (c *GitCode) GetRepository(name string) (*Repository, bool) {
 		Organization: &repoOrg,
 		Owner:        repo.Owner.Name,
 		URL:          repo.URL,
-	}, true
+	}, nil
 }

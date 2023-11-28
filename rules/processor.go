@@ -1,17 +1,19 @@
 package rules
 
 import (
+	"github.com/rs/zerolog/log"
 	"idp-cfs/contract"
 	"idp-cfs/platform_git"
-	"idp-cfs/platform_gp"
 )
 
-func GetProcessor(c *contract.Contract, g *platform_git.GitCode, gp *platform_gp.GoldenPath) *Processor {
+func GetProcessor(c *contract.Contract) *Processor {
+
+	git := platform_git.GetGithubCode()
 
 	return &Processor{
 		Contract:   c,
-		GitCode:    g,
-		GoldenPath: gp,
+		GitCode:    git,
+		GoldenPath: nil,
 	}
 }
 
@@ -19,8 +21,27 @@ func GetProcessor(c *contract.Contract, g *platform_git.GitCode, gp *platform_gp
 // Verifies that all systems are up and return expected status codes
 func (p *Processor) DryRun() bool {
 
+	switch p.Contract.Action {
+	case "new-contract":
+
+		orgFound, err := p.GitCode.GetOrganization(p.Contract.Code.Org)
+
+		if err != nil {
+			log.Warn().Msgf(err.Error())
+		}
+
+		log.Info().Msgf("Org found: %v", orgFound)
+
+	case "update-contract":
+	default:
+		log.Error().Msgf("Unexpected to get here. This means the contract was validated yet it made it here? Action: %v", p.Contract.Action)
+	}
+
+	if p.Contract.Action == "new-contract" {
+
+	}
+
 	// if action == new-contract
-	// call dry-run-new-contract func
 
 	// verify Code section:
 	// Can I connect to git?
