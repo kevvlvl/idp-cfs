@@ -2,10 +2,7 @@ package platform_git
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"github.com/google/go-github/v56/github"
-	"github.com/rs/zerolog/log"
 	"os"
 )
 
@@ -16,8 +13,8 @@ func GetGithubCode() *GitCode {
 
 	user, resp, err := client.Users.Get(context.Background(), "")
 
-	valid := validateApiResponse(resp, err, "Error trying to get User")
-	if !valid {
+	err = validateApiResponse(resp, err, "Error trying to get User")
+	if err != nil {
 		return nil
 	}
 
@@ -31,28 +28,26 @@ func GetGithubCode() *GitCode {
 	}
 }
 
-func GetGithubUser(c *github.Client) *github.User {
+func GetGithubUser(c *github.Client) (*github.User, error) {
 
 	user, resp, err := c.Users.Get(context.Background(), "")
 
-	valid := validateApiResponse(resp, err, "Error trying to get User")
-	if !valid {
-		return nil
+	err = validateApiResponse(resp, err, "Error trying to get User")
+	if err != nil {
+		return nil, err
 	}
 
-	return user
+	return user, nil
 }
 
 func (c *GitCode) GetOrganization(organizationName string) (*Organization, error) {
 
 	org, resp, err := c.GithubClient.Organizations.Get(context.Background(), organizationName)
 
-	valid := validateApiResponse(resp, err, "Error trying to get organization")
-	if !valid {
-		return nil, errors.New(fmt.Sprintf("Error trying to get organization. Error: %v", err))
+	err = validateApiResponse(resp, err, "Error trying to get organization")
+	if err != nil {
+		return nil, err
 	}
-
-	log.Debug().Msgf("Organization found %+v", org)
 
 	return &Organization{
 		Name:    org.Name,
@@ -64,12 +59,10 @@ func (c *GitCode) GetRepository(name string) (*Repository, error) {
 
 	repo, resp, err := c.GithubClient.Repositories.Get(context.Background(), *c.GithubUser.Login, name)
 
-	valid := validateApiResponse(resp, err, "Error trying to get repository")
-	if !valid {
-		return nil, errors.New(fmt.Sprintf("Error trying to get repository. Error: %v", err))
+	err = validateApiResponse(resp, err, "Error trying to get repository")
+	if err != nil {
+		return nil, err
 	}
-
-	log.Debug().Msgf("Repository found %+v", repo)
 
 	repoOrg := ""
 	if repo.Organization != nil {

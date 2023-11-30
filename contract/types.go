@@ -4,10 +4,10 @@ type Contract struct {
 	Action string `yaml:"action"`
 
 	Code struct {
-		Tool   string `yaml:"tool"`
-		Org    string `yaml:"org"`
-		Repo   string `yaml:"repo"`
-		Branch string `yaml:"branch"`
+		Tool   string  `yaml:"tool"`
+		Org    *string `yaml:"org,omitempty"`
+		Repo   string  `yaml:"repo"`
+		Branch string  `yaml:"branch"`
 	} `yaml:"code"`
 
 	GoldenPath struct {

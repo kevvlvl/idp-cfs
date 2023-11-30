@@ -4,8 +4,8 @@ action: new-contract
 code:
   # Possible options: github, gitlab, gite-a
   tool: github
-  # the organization in your git system
-  org: kevvlvl
+  # org (optional) the organization in your git system
+#  org: kevvlvl
   # repository name
   repo: my-api-app
   # base branch

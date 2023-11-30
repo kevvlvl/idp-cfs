@@ -1,20 +1,25 @@
 package contract
 
 import (
+	"errors"
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 	"os"
 )
 
 // Load unmarshalls the YAML contract file into a struct
-func Load(filePath string) *Contract {
+func Load(filePath string) (*Contract, error) {
 
 	c := &Contract{}
 	buf, err := os.ReadFile(filePath)
 
 	if err != nil {
-		log.Error().Msgf("Error trying to read contract file: %v", err)
-		return nil
+
+		errorMsg := fmt.Sprintf("error trying to read contract file: %v", err)
+
+		log.Error().Msgf(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
 
 	err = yaml.Unmarshal(buf, c)
@@ -22,11 +27,14 @@ func Load(filePath string) *Contract {
 	valid := validate(c)
 
 	if !valid {
-		log.Error().Msgf("The contract contract is not valid!")
-		return nil
+
+		errorMsg := "the contract metadata is not valid"
+
+		log.Error().Msg(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
 
-	return c
+	return c, nil
 }
 
 // Validate returns true if the contract contains all valid values
@@ -48,7 +56,7 @@ func validate(contract *Contract) bool {
 		}
 
 		validCodeValues = contract.Code.Repo != "" &&
-			contract.Code.Org != "" &&
+			(contract.Code.Org == nil || *contract.Code.Org != "") &&
 			contract.Code.Branch != ""
 
 		// Validate Golden-Path section

@@ -19,3 +19,16 @@ const (
 	Failure
 	Partial
 )
+
+const (
+	// NewContract for request of New infrastructure
+	NewContract = "new-contract"
+	// UpdateContract for request to Update an existing infrastructure
+	UpdateContract = "update-contract"
+	// CodeGithub for the code repository of type Github (public/cloud)
+	CodeGithub = "github"
+	// CodeGitlab for the code repository of type Gitlab
+	CodeGitlab = "gitlab"
+	// CodeGitea for the code repository of type Gitea
+	CodeGitea = "gitea"
+)
