@@ -3,9 +3,11 @@ package rules
 import (
 	"errors"
 	"fmt"
+	"github.com/go-git/go-git/v5"
 	"github.com/rs/zerolog/log"
 	"idp-cfs/contract"
 	"idp-cfs/platform_git"
+	"os"
 	"strings"
 )
 
@@ -105,7 +107,22 @@ func (p *Processor) DryRun() (bool, error) {
 		return false, errors.New(unexpectedMsg)
 	}
 
-	// Verify golden path section
+	//----------------------------------------------------------------------------------
+	// Golden path section validation
+	//----------------------------------------------------------------------------------
+	if p.Contract.GoldenPath.Url != nil {
+
+		c, err := git.PlainClone("/tmp/gp", false, &git.CloneOptions{
+			URL:      *p.Contract.GoldenPath.Url,
+			Progress: os.Stdout,
+		})
+
+		if err != nil {
+			log.Error().Msgf("Error trying to clone the gp URL %v - Error: %v", p.Contract.GoldenPath.Url, err)
+		}
+
+		log.Info().Msgf("Cloned the gp: %v", c)
+	}
 	// Can I connect to the git repo of the gp?
 	// Does the branch exist? If no, FAIL with reason. If yes, continue
 	// Does the relative path exist. If no, FAIL with reason. If yes, continue

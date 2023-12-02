@@ -11,11 +11,11 @@ type Contract struct {
 	} `yaml:"code"`
 
 	GoldenPath struct {
-		Git    string `yaml:"git"`
-		Name   string `yaml:"name"`
-		Branch string `yaml:"branch"`
-		Tag    string `yaml:"tag"`
-		Path   string `yaml:"path"`
+		Url    *string `yaml:"url,omitempty"`
+		Name   *string `yaml:"name,omitempty"`
+		Path   *string `yaml:"path,omitempty"`
+		Branch *string `yaml:"branch,omitempty"`
+		Tag    *string `yaml:"tag,omitempty"`
 	} `yaml:"golden-path"`
 
 	Deployment struct {

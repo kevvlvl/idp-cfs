@@ -13,8 +13,8 @@ code:
 
 # Optional: Define an existing golden path (GP), otherwise start with an empty git repo
 golden-path:
-  # URL of the git repo where the gp is found
-  git: github.com:kevvlvl/idp-cfs.git
+  # URL of the git repo where the gp is found. must be a public repo
+  url: https://github.com/kevvlvl/idp-cfs.git
   # The name of the golden path to choose
   name: gochi-app
   # The path where the golden path is located

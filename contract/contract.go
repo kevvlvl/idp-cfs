@@ -40,11 +40,14 @@ func Load(filePath string) (*Contract, error) {
 // Validate returns true if the contract contains all valid values
 func validate(contract *Contract) bool {
 
-	validCode := false
-	validCodeValues := false
-	validGpValues := false
-	validDeployment := false
-	codeTools := [3]string{"github", "gitlab", "gitea"}
+	var (
+		validCode         = false
+		validCodeValues   = false
+		validGpValuesOmit = false
+		validGpValues     = false
+		validDeployment   = false
+		codeTools         = [3]string{"github", "gitlab", "gitea"}
+	)
 
 	if contract != nil {
 
@@ -61,10 +64,20 @@ func validate(contract *Contract) bool {
 
 		// Validate Golden-Path section
 
-		validGpValues = contract.GoldenPath.Git != "" &&
-			contract.GoldenPath.Name != "" &&
-			contract.GoldenPath.Path != "" &&
-			contract.GoldenPath.Branch != ""
+		validGpValuesOmit = contract.GoldenPath.Url == nil &&
+			contract.GoldenPath.Name == nil &&
+			contract.GoldenPath.Path == nil &&
+			contract.GoldenPath.Branch == nil &&
+			contract.GoldenPath.Tag == nil
+
+		if !validGpValuesOmit {
+			validGpValues = *contract.GoldenPath.Url != "" &&
+				*contract.GoldenPath.Name != "" &&
+				*contract.GoldenPath.Path != "" &&
+				*contract.GoldenPath.Branch != ""
+
+			// Tag field is optional even when the rest of fields are set. Skip validating tag
+		}
 
 		// Validate Deployment section
 
