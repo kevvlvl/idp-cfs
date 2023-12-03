@@ -8,7 +8,7 @@ import (
 
 func GetGithubCode() *GitCode {
 
-	pat := os.Getenv("GITHUB_PAT")
+	pat := os.Getenv("CFS_GITHUB_PAT")
 	client := github.NewClient(nil).WithAuthToken(pat)
 
 	user, resp, err := client.Users.Get(context.Background(), "")

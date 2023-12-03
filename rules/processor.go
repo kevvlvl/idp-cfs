@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/rs/zerolog/log"
 	"idp-cfs/contract"
 	"idp-cfs/platform_git"
@@ -101,10 +102,8 @@ func (p *Processor) DryRun() (bool, error) {
 		}
 
 	} else {
-		unexpectedMsg := fmt.Sprintf("unexpected to get here. This means the contract was validated yet it made it here? Action: %v", p.Contract.Action)
-
-		log.Error().Msgf(unexpectedMsg)
-		return false, errors.New(unexpectedMsg)
+		log.Error().Msgf("unexpected to get here. This means the contract was validated yet it made it here? Action: %v", p.Contract.Action)
+		return false, unexpectedError()
 	}
 
 	//----------------------------------------------------------------------------------
@@ -112,21 +111,74 @@ func (p *Processor) DryRun() (bool, error) {
 	//----------------------------------------------------------------------------------
 	if p.Contract.GoldenPath.Url != nil {
 
-		c, err := git.PlainClone("/tmp/gp", false, &git.CloneOptions{
-			URL:      *p.Contract.GoldenPath.Url,
-			Progress: os.Stdout,
-		})
+		checkoutPath := os.Getenv("CFS_GP_CHECKOUT_PATH")
+		if checkoutPath == "" {
+			checkoutPath = "/tmp/gp"
+		}
+
+		err := os.RemoveAll(checkoutPath)
+		if err != nil {
+
+			log.Error().Msgf("Error cleaning up the folder %s. Error = %v: ", checkoutPath, err)
+			return false, err
+		}
+
+		gitOptions := &git.CloneOptions{
+			URL:          *p.Contract.GoldenPath.Url,
+			Progress:     os.Stdout,
+			SingleBranch: false,
+		}
+
+		r, err := git.PlainClone(checkoutPath, false, gitOptions)
 
 		if err != nil {
 			log.Error().Msgf("Error trying to clone the gp URL %v - Error: %v", p.Contract.GoldenPath.Url, err)
 		}
 
-		log.Info().Msgf("Cloned the gp: %v", c)
+		headRef, err := r.Head()
+		if err != nil {
+			log.Error().Msgf("Unable to return reference of HEAD. Error: %v", err)
+			return false, err
+		}
+
+		log.Info().Msgf("Cloned the golden path at %s. HEAD ref: %s", checkoutPath, headRef)
+
+		showRefsFound(r)
+
+		branchName := fmt.Sprintf("refs/remotes/origin/%s", *p.Contract.GoldenPath.Branch)
+
+		b, err := r.Branch(branchName)
+
+		// FIXME: why this always bombs? the ref is there!
+		if err != nil {
+			log.Error().Msgf("Error trying to find the branch name %v. Error: %v", branchName, err)
+			return false, err
+		}
+
+		log.Info().Msgf("Found the branch %v", b)
+
+		worktree, err := r.Worktree()
+		if err != nil {
+			log.Error().Msgf("Error trying to get worktree for the repository. Error: %v", err)
+			return false, err
+		}
+
+		err = worktree.Checkout(&git.CheckoutOptions{
+			Branch: plumbing.ReferenceName(branchName),
+			Create: false,
+		})
+
+		if err != nil {
+			log.Error().Msgf("Error trying to checkout the branch. Error: %v", err)
+			return false, err
+		}
+
+		log.Info().Msg("Checked out on that branch successfully.")
 	}
-	// Can I connect to the git repo of the gp?
-	// Does the branch exist? If no, FAIL with reason. If yes, continue
-	// Does the relative path exist. If no, FAIL with reason. If yes, continue
-	// Does the name of the specified gp exist? If no, FAIL with reason. If yes, continue
+	// Can I connect to the git repo of the gp? - DONE
+	// Does the branch exist? If no, FAIL with reason. If yes, continue  - DONE
+	// Does the relative path exist. If no, FAIL with reason. If yes, continue - TODO
+	// Does the name of the specified gp exist? If no, FAIL with reason. If yes, continue - TODO
 
 	// Verify kubernetes deployment section
 	// Can I connect to k8s and verify the operator status?
@@ -145,8 +197,25 @@ func (p *Processor) Execute() (RuleResult, error) {
 }
 
 func unexpectedError() error {
-	m := "unexpected! null error and null repo struct. Review contract inputs and project owner for an update"
+	m := "unexpected! Verify contract inputs, possibly report bug to the project maintainers"
 
 	log.Error().Msg(m)
 	return errors.New(m)
+}
+
+// showRefsFound outputs all found Refs for the git repository in input
+func showRefsFound(r *git.Repository) {
+	refs, _ := r.References()
+
+	err := refs.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Type() == plumbing.HashReference {
+			log.Info().Msgf(" - Ref Found: %+v", ref)
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Error().Msgf("Error going through git refs. Error: %v", err)
+		return
+	}
 }
