@@ -18,7 +18,7 @@ golden-path:
   # The name of the golden path to choose
   name: gochi-app
   # The path where the golden path is located
-  path: ./gp/golang/gochi-app
+  path: gp/golang/gochi-app
   # branch name where the gp resides.
   branch: feature/alpha
   # Optional: tag to specify a stable version. Default = latest commit

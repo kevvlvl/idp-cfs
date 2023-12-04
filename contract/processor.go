@@ -1,20 +1,16 @@
-package rules
+package contract
 
 import (
 	"errors"
-	"fmt"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/rs/zerolog/log"
-	"idp-cfs/contract"
 	"idp-cfs/platform_git"
-	"os"
+	"idp-cfs/platform_gp"
 	"strings"
 )
 
 func GetProcessor(contractFile string) *Processor {
 
-	c, err := contract.Load(contractFile)
+	c, err := Load(contractFile)
 
 	if err != nil {
 		log.Error().Msg("ERROR when loading contract")
@@ -29,7 +25,7 @@ func GetProcessor(contractFile string) *Processor {
 }
 
 // Execute allows you to run the idp either in dryRun mode, or in real life (dryRun = false)
-func (p *Processor) Execute(dryRun bool) (RuleResult, error) {
+func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 
 	//----------------------------------------------------------------------------------
 	// Code repository validation
@@ -43,7 +39,7 @@ func (p *Processor) Execute(dryRun bool) (RuleResult, error) {
 		orgFound, err := p.GitCode.GetOrganization(*p.Contract.Code.Org)
 
 		if orgFound == nil && err != nil {
-			return RuleResult(Failure), err
+			return IdpStatusFailure, err
 		}
 
 		log.Info().Msgf("Org found: %v", orgFound)
@@ -68,7 +64,7 @@ func (p *Processor) Execute(dryRun bool) (RuleResult, error) {
 				log.Info().Msg("New desired repo does not exist.")
 			} else {
 				log.Error().Msgf(err.Error())
-				return RuleResult(Failure), err
+				return IdpStatusFailure, err
 			}
 		} else {
 
@@ -76,10 +72,10 @@ func (p *Processor) Execute(dryRun bool) (RuleResult, error) {
 				repoFoundMsg := "A repository was found and returned. Make sure to review the code repo name and desired contract action"
 
 				log.Error().Msgf(repoFoundMsg)
-				return RuleResult(Failure), errors.New(repoFoundMsg)
+				return IdpStatusFailure, errors.New(repoFoundMsg)
 			} else {
 
-				return RuleResult(Failure), unexpectedError()
+				return IdpStatusFailure, unexpectedError()
 			}
 		}
 
@@ -88,7 +84,7 @@ func (p *Processor) Execute(dryRun bool) (RuleResult, error) {
 		// In the case of an update infra request, we want to find the repo and branch name
 		if err != nil {
 			log.Error().Msgf(err.Error())
-			return RuleResult(Failure), err
+			return IdpStatusFailure, err
 		} else {
 
 			if repo != nil {
@@ -96,13 +92,13 @@ func (p *Processor) Execute(dryRun bool) (RuleResult, error) {
 				// For the action update-contract, we want an HTTP 2xx! Otherwise, no update can be done
 				log.Info().Msgf("Found existing repo %v", repo)
 			} else {
-				return RuleResult(Failure), unexpectedError()
+				return IdpStatusFailure, unexpectedError()
 			}
 		}
 
 	} else {
 		log.Error().Msgf("unexpected to get here. This means the contract was validated yet it made it here? Action: %v", p.Contract.Action)
-		return RuleResult(Failure), unexpectedError()
+		return IdpStatusFailure, unexpectedError()
 	}
 
 	//----------------------------------------------------------------------------------
@@ -110,62 +106,31 @@ func (p *Processor) Execute(dryRun bool) (RuleResult, error) {
 	//----------------------------------------------------------------------------------
 	if p.Contract.GoldenPath.Url != nil {
 
-		checkoutPath := os.Getenv("CFS_GP_CHECKOUT_PATH")
-		if checkoutPath == "" {
-			checkoutPath = "/tmp/gp"
+		var tag string
+		if p.Contract.GoldenPath.Tag != nil {
+			tag = *p.Contract.GoldenPath.Tag
 		}
 
-		err := os.RemoveAll(checkoutPath)
-		if err != nil {
+		gp := platform_gp.GetGoldenPath(*p.Contract.GoldenPath.Url,
+			*p.Contract.GoldenPath.Name,
+			*p.Contract.GoldenPath.Branch,
+			*p.Contract.GoldenPath.Path,
+			tag)
 
-			log.Error().Msgf("Error cleaning up the folder %s. Error = %v: ", checkoutPath, err)
-			return RuleResult(Failure), err
-		}
-
-		gitOptions := &git.CloneOptions{
-			URL:          *p.Contract.GoldenPath.Url,
-			Progress:     os.Stdout,
-			SingleBranch: false,
-		}
-
-		r, err := git.PlainClone(checkoutPath, false, gitOptions)
+		err := gp.CloneGp()
 
 		if err != nil {
-			log.Error().Msgf("Error trying to clone the gp URL %v - Error: %v", p.Contract.GoldenPath.Url, err)
+			return IdpStatusFailure, err
 		}
 
-		headRef, err := r.Head()
-		if err != nil {
-			log.Error().Msgf("Unable to return reference of HEAD. Error: %v", err)
-			return RuleResult(Failure), err
+		log.Info().Msg("Checked out branch successfully.")
+
+		if !dryRun {
+			// FIXME: instead of re-checking everything twice after dry-run, add private flags to struct to just perform the actions next time assuming dry-run is success
+			// TODO: clone into code git repo. git push code repo into desired repo..
 		}
-
-		log.Info().Msgf("Cloned the golden path at %s. HEAD ref: %s", checkoutPath, headRef)
-
-		branchRef := getRefForBranchName(r, fmt.Sprintf("refs/remotes/origin/%s", *p.Contract.GoldenPath.Branch))
-
-		log.Info().Msgf("Found the branch with ref %+v", branchRef)
-
-		worktree, err := r.Worktree()
-		if err != nil {
-			log.Error().Msgf("Error trying to get worktree for the repository. Error: %v", err)
-			return RuleResult(Failure), err
-		}
-
-		err = worktree.Checkout(&git.CheckoutOptions{
-			Branch: branchRef.Name(),
-			Create: false,
-		})
-
-		if err != nil {
-			log.Error().Msgf("Error trying to checkout the branch. Error: %v", err)
-			return RuleResult(Failure), err
-		}
-
-		log.Info().Msg("Checked out on that branch successfully.")
 	}
 
-	// TODO: Search for the relative path (if any) and is the gp named as configured
 	// TODO IF NOT DRY-RUN: NEXT: clone gp into new repo
 	// TODO next: Kubernetes: create namespace and ensure namespace managed by ArgoCD
 
@@ -177,7 +142,7 @@ func (p *Processor) Execute(dryRun bool) (RuleResult, error) {
 	// else if action == update-contract
 	// call dry-run-update-contract func
 
-	return RuleResult(Failure), nil
+	return IdpStatusFailure, nil
 }
 
 func unexpectedError() error {
@@ -185,25 +150,4 @@ func unexpectedError() error {
 
 	log.Error().Msg(m)
 	return errors.New(m)
-}
-
-// showRefsFound outputs all found Refs for the git repository in input
-func getRefForBranchName(r *git.Repository, branchName string) *plumbing.Reference {
-	var res *plumbing.Reference
-
-	refs, _ := r.References()
-	err := refs.ForEach(func(ref *plumbing.Reference) error {
-
-		if ref.Type() == plumbing.HashReference && ref.Name().String() == branchName {
-			log.Info().Msgf(" - Ref Found for branch: %+v", ref)
-			res = ref
-		}
-
-		return nil
-	})
-	if err != nil {
-		log.Error().Msgf("Error going through git refs. Error: %v", err)
-	}
-
-	return res
 }

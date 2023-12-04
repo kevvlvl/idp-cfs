@@ -1,5 +1,10 @@
 package contract
 
+import (
+	"idp-cfs/platform_git"
+	"idp-cfs/platform_gp"
+)
+
 type Contract struct {
 	Action string `yaml:"action"`
 
@@ -26,3 +31,30 @@ type Contract struct {
 		} `yaml:"kubernetes"`
 	} `yaml:"deployment"`
 }
+
+type Processor struct {
+	Contract   *Contract
+	GitCode    *platform_git.GitCode
+	GoldenPath *platform_gp.GoldenPath
+}
+
+type IdpStatus int64
+
+const (
+	IdpStatusSuccess IdpStatus = iota
+	IdpStatusFailure
+	IdpStatusPartial
+)
+
+const (
+	// NewContract for request of New infrastructure
+	NewContract = "new-contract"
+	// UpdateContract for request to Update an existing infrastructure
+	UpdateContract = "update-contract"
+	// CodeGithub for the code repository of type Github (public/cloud)
+	CodeGithub = "github"
+	// CodeGitlab for the code repository of type Gitlab
+	CodeGitlab = "gitlab"
+	// CodeGitea for the code repository of type Gitea
+	CodeGitea = "gitea"
+)
