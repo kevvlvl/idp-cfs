@@ -28,9 +28,8 @@ func GetProcessor(contractFile string) *Processor {
 	}
 }
 
-// DryRun returns true if the simulation run is successful.
-// Verifies that all systems are up and return expected status codes
-func (p *Processor) DryRun() (bool, error) {
+// Execute allows you to run the idp either in dryRun mode, or in real life (dryRun = false)
+func (p *Processor) Execute(dryRun bool) (RuleResult, error) {
 
 	//----------------------------------------------------------------------------------
 	// Code repository validation
@@ -44,7 +43,7 @@ func (p *Processor) DryRun() (bool, error) {
 		orgFound, err := p.GitCode.GetOrganization(*p.Contract.Code.Org)
 
 		if orgFound == nil && err != nil {
-			return false, err
+			return RuleResult(Failure), err
 		}
 
 		log.Info().Msgf("Org found: %v", orgFound)
@@ -69,7 +68,7 @@ func (p *Processor) DryRun() (bool, error) {
 				log.Info().Msg("New desired repo does not exist.")
 			} else {
 				log.Error().Msgf(err.Error())
-				return false, err
+				return RuleResult(Failure), err
 			}
 		} else {
 
@@ -77,10 +76,10 @@ func (p *Processor) DryRun() (bool, error) {
 				repoFoundMsg := "A repository was found and returned. Make sure to review the code repo name and desired contract action"
 
 				log.Error().Msgf(repoFoundMsg)
-				return false, errors.New(repoFoundMsg)
+				return RuleResult(Failure), errors.New(repoFoundMsg)
 			} else {
 
-				return false, unexpectedError()
+				return RuleResult(Failure), unexpectedError()
 			}
 		}
 
@@ -89,7 +88,7 @@ func (p *Processor) DryRun() (bool, error) {
 		// In the case of an update infra request, we want to find the repo and branch name
 		if err != nil {
 			log.Error().Msgf(err.Error())
-			return false, err
+			return RuleResult(Failure), err
 		} else {
 
 			if repo != nil {
@@ -97,13 +96,13 @@ func (p *Processor) DryRun() (bool, error) {
 				// For the action update-contract, we want an HTTP 2xx! Otherwise, no update can be done
 				log.Info().Msgf("Found existing repo %v", repo)
 			} else {
-				return false, unexpectedError()
+				return RuleResult(Failure), unexpectedError()
 			}
 		}
 
 	} else {
 		log.Error().Msgf("unexpected to get here. This means the contract was validated yet it made it here? Action: %v", p.Contract.Action)
-		return false, unexpectedError()
+		return RuleResult(Failure), unexpectedError()
 	}
 
 	//----------------------------------------------------------------------------------
@@ -120,7 +119,7 @@ func (p *Processor) DryRun() (bool, error) {
 		if err != nil {
 
 			log.Error().Msgf("Error cleaning up the folder %s. Error = %v: ", checkoutPath, err)
-			return false, err
+			return RuleResult(Failure), err
 		}
 
 		gitOptions := &git.CloneOptions{
@@ -138,47 +137,37 @@ func (p *Processor) DryRun() (bool, error) {
 		headRef, err := r.Head()
 		if err != nil {
 			log.Error().Msgf("Unable to return reference of HEAD. Error: %v", err)
-			return false, err
+			return RuleResult(Failure), err
 		}
 
 		log.Info().Msgf("Cloned the golden path at %s. HEAD ref: %s", checkoutPath, headRef)
 
-		showRefsFound(r)
+		branchRef := getRefForBranchName(r, fmt.Sprintf("refs/remotes/origin/%s", *p.Contract.GoldenPath.Branch))
 
-		branchName := fmt.Sprintf("refs/remotes/origin/%s", *p.Contract.GoldenPath.Branch)
-
-		b, err := r.Branch(branchName)
-
-		// FIXME: why this always bombs? the ref is there!
-		if err != nil {
-			log.Error().Msgf("Error trying to find the branch name %v. Error: %v", branchName, err)
-			return false, err
-		}
-
-		log.Info().Msgf("Found the branch %v", b)
+		log.Info().Msgf("Found the branch with ref %+v", branchRef)
 
 		worktree, err := r.Worktree()
 		if err != nil {
 			log.Error().Msgf("Error trying to get worktree for the repository. Error: %v", err)
-			return false, err
+			return RuleResult(Failure), err
 		}
 
 		err = worktree.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.ReferenceName(branchName),
+			Branch: branchRef.Name(),
 			Create: false,
 		})
 
 		if err != nil {
 			log.Error().Msgf("Error trying to checkout the branch. Error: %v", err)
-			return false, err
+			return RuleResult(Failure), err
 		}
 
 		log.Info().Msg("Checked out on that branch successfully.")
 	}
-	// Can I connect to the git repo of the gp? - DONE
-	// Does the branch exist? If no, FAIL with reason. If yes, continue  - DONE
-	// Does the relative path exist. If no, FAIL with reason. If yes, continue - TODO
-	// Does the name of the specified gp exist? If no, FAIL with reason. If yes, continue - TODO
+
+	// TODO: Search for the relative path (if any) and is the gp named as configured
+	// TODO IF NOT DRY-RUN: NEXT: clone gp into new repo
+	// TODO next: Kubernetes: create namespace and ensure namespace managed by ArgoCD
 
 	// Verify kubernetes deployment section
 	// Can I connect to k8s and verify the operator status?
@@ -187,11 +176,6 @@ func (p *Processor) DryRun() (bool, error) {
 
 	// else if action == update-contract
 	// call dry-run-update-contract func
-
-	return true, nil
-}
-
-func (p *Processor) Execute() (RuleResult, error) {
 
 	return RuleResult(Failure), nil
 }
@@ -204,18 +188,22 @@ func unexpectedError() error {
 }
 
 // showRefsFound outputs all found Refs for the git repository in input
-func showRefsFound(r *git.Repository) {
-	refs, _ := r.References()
+func getRefForBranchName(r *git.Repository, branchName string) *plumbing.Reference {
+	var res *plumbing.Reference
 
+	refs, _ := r.References()
 	err := refs.ForEach(func(ref *plumbing.Reference) error {
-		if ref.Type() == plumbing.HashReference {
-			log.Info().Msgf(" - Ref Found: %+v", ref)
+
+		if ref.Type() == plumbing.HashReference && ref.Name().String() == branchName {
+			log.Info().Msgf(" - Ref Found for branch: %+v", ref)
+			res = ref
 		}
 
 		return nil
 	})
 	if err != nil {
 		log.Error().Msgf("Error going through git refs. Error: %v", err)
-		return
 	}
+
+	return res
 }
