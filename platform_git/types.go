@@ -5,6 +5,7 @@ import "github.com/google/go-github/v56/github"
 type Git interface {
 	GetOrganization(organizationName string) (*Organization, error)
 	GetRepository(name string) (*Repository, error)
+	CreateRepository(name string) (*Repository, error)
 }
 
 type GitCode struct {

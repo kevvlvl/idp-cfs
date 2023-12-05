@@ -60,3 +60,11 @@ func (c *GithubCode) GetRepository(name string) (*Repository, error) {
 		URL:          repo.URL,
 	}, nil
 }
+
+func (c *GithubCode) CreateRepository(name string) (*Repository, error) {
+
+	// TODO: Create repository. return repository
+	// TODO NEXT STEP: push gp into this repository (if any defined). Prepare this work into a new tmp folder (/tmp/idp-cfs-code), cp gp (env CFS_GP_CHECKOUT_PATH) into this at desired default branch, then git push and delete this tmp folder)
+
+	return nil, nil
+}
