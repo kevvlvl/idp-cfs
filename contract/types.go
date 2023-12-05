@@ -34,7 +34,7 @@ type Contract struct {
 
 type Processor struct {
 	Contract   *Contract
-	GitCode    *platform_git.GitCode
+	GitCode    *platform_git.GithubCode
 	GoldenPath *platform_gp.GoldenPath
 }
 
@@ -51,10 +51,4 @@ const (
 	NewContract = "new-contract"
 	// UpdateContract for request to Update an existing infrastructure
 	UpdateContract = "update-contract"
-	// CodeGithub for the code repository of type Github (public/cloud)
-	CodeGithub = "github"
-	// CodeGitlab for the code repository of type Gitlab
-	CodeGitlab = "gitlab"
-	// CodeGitea for the code repository of type Gitea
-	CodeGitea = "gitea"
 )

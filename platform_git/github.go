@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func GetGithubCode() *GitCode {
+func GetGithubCode() *GithubCode {
 
 	pat := os.Getenv("CFS_GITHUB_PAT")
 	client := github.NewClient(nil).WithAuthToken(pat)
@@ -18,29 +18,13 @@ func GetGithubCode() *GitCode {
 		return nil
 	}
 
-	return &GitCode{
+	return &GithubCode{
 		GithubClient: client,
-		GithubUser:   user,
-		Organization: nil,
-		OrgExists:    false,
-		Repository:   nil,
-		RepoExists:   false,
+		githubUser:   user,
 	}
 }
 
-func GetGithubUser(c *github.Client) (*github.User, error) {
-
-	user, resp, err := c.Users.Get(context.Background(), "")
-
-	err = validateApiResponse(resp, err, "Error trying to get User")
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-func (c *GitCode) GetOrganization(organizationName string) (*Organization, error) {
+func (c *GithubCode) GetOrganization(organizationName string) (*Organization, error) {
 
 	org, resp, err := c.GithubClient.Organizations.Get(context.Background(), organizationName)
 
@@ -55,9 +39,9 @@ func (c *GitCode) GetOrganization(organizationName string) (*Organization, error
 	}, nil
 }
 
-func (c *GitCode) GetRepository(name string) (*Repository, error) {
+func (c *GithubCode) GetRepository(name string) (*Repository, error) {
 
-	repo, resp, err := c.GithubClient.Repositories.Get(context.Background(), *c.GithubUser.Login, name)
+	repo, resp, err := c.GithubClient.Repositories.Get(context.Background(), *c.githubUser.Login, name)
 
 	err = validateApiResponse(resp, err, "Error trying to get repository")
 	if err != nil {

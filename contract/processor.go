@@ -28,15 +28,17 @@ func GetProcessor(contractFile string) *Processor {
 func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 
 	//----------------------------------------------------------------------------------
-	// Code repository validation
+	// GithubCode repository validation
 	//----------------------------------------------------------------------------------
 	// Search the code repo's organization
+
+	code := platform_git.GetCode(p.Contract.Code.Tool)
 
 	if p.Contract.Code.Org != nil {
 
 		log.Info().Msgf("Contract Org defined. Search for %v", p.Contract.Code.Org)
 
-		orgFound, err := p.GitCode.GetOrganization(*p.Contract.Code.Org)
+		orgFound, err := code.GetOrganization(*p.Contract.Code.Org)
 
 		if orgFound == nil && err != nil {
 			return IdpStatusFailure, err
@@ -48,11 +50,11 @@ func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 	}
 
 	//----------------------------------------------------------------------------------
-	// Code repository validation
+	// GithubCode repository validation
 	//----------------------------------------------------------------------------------
 	// Search the code repo's organization
 
-	repo, err := p.GitCode.GetRepository(p.Contract.Code.Repo)
+	repo, err := code.GetRepository(p.Contract.Code.Repo)
 
 	if p.Contract.Action == NewContract {
 
@@ -126,7 +128,6 @@ func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 		log.Info().Msg("Checked out branch successfully.")
 
 		if !dryRun {
-			// FIXME: instead of re-checking everything twice after dry-run, add private flags to struct to just perform the actions next time assuming dry-run is success
 			// TODO: clone into code git repo. git push code repo into desired repo..
 		}
 	}
