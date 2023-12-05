@@ -17,15 +17,61 @@ func GetProcessor(contractFile string) *Processor {
 		return nil
 	}
 
+	var tag string
+	if c.GoldenPath.Tag != nil {
+		tag = *c.GoldenPath.Tag
+	}
+
+	gp := platform_gp.GetGoldenPath(*c.GoldenPath.Url,
+		*c.GoldenPath.Name,
+		*c.GoldenPath.Branch,
+		*c.GoldenPath.Path,
+		tag)
+
 	return &Processor{
 		Contract:   c,
-		GitCode:    platform_git.GetGithubCode(),
-		GoldenPath: nil,
+		GitCode:    platform_git.GetCode(c.Code.Tool),
+		GoldenPath: &gp,
 	}
 }
 
 // Execute allows you to run the idp either in dryRun mode, or in real life (dryRun = false)
-func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
+func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
+
+	//----------------------------------------------------------------------------------
+	// GithubCode repository validation
+	//----------------------------------------------------------------------------------
+	// Search the code repo's organization
+
+	dryRunSuccess := performDryRun(p)
+
+	if dryRunSuccess && dryRunMode {
+		return IdpStatusSuccess, nil
+	} else if dryRunSuccess {
+
+		log.Info().Msg("Dry Run was successful. ***** BEGIN Creating platform... *****")
+
+		if p.Contract.Action == NewContract {
+
+			err := p.GitCode.CreateRepository(p.Contract.Code.Repo)
+
+			if err != nil {
+				return IdpStatusFailure, err
+			} else {
+				return IdpStatusSuccess, nil
+			}
+
+		} else if p.Contract.Action == UpdateContract {
+			log.Error().Msg("Not implemented yet")
+		}
+
+		return IdpStatusSuccess, nil
+	} else {
+		return IdpStatusFailure, nil
+	}
+}
+
+func performDryRun(p *Processor) bool {
 
 	//----------------------------------------------------------------------------------
 	// GithubCode repository validation
@@ -41,7 +87,7 @@ func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 		orgFound, err := code.GetOrganization(*p.Contract.Code.Org)
 
 		if orgFound == nil && err != nil {
-			return IdpStatusFailure, err
+			return false
 		}
 
 		log.Info().Msgf("Org found: %v", orgFound)
@@ -66,7 +112,7 @@ func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 				log.Info().Msg("New desired repo does not exist.")
 			} else {
 				log.Error().Msgf(err.Error())
-				return IdpStatusFailure, err
+				return false
 			}
 		} else {
 
@@ -74,10 +120,10 @@ func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 				repoFoundMsg := "A repository was found and returned. Make sure to review the code repo name and desired contract action"
 
 				log.Error().Msgf(repoFoundMsg)
-				return IdpStatusFailure, errors.New(repoFoundMsg)
+				return false
 			} else {
 
-				return IdpStatusFailure, unexpectedError()
+				return false
 			}
 		}
 
@@ -86,7 +132,7 @@ func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 		// In the case of an update infra request, we want to find the repo and branch name
 		if err != nil {
 			log.Error().Msgf(err.Error())
-			return IdpStatusFailure, err
+			return false
 		} else {
 
 			if repo != nil {
@@ -94,13 +140,13 @@ func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 				// For the action update-contract, we want an HTTP 2xx! Otherwise, no update can be done
 				log.Info().Msgf("Found existing repo %v", repo)
 			} else {
-				return IdpStatusFailure, unexpectedError()
+				return false
 			}
 		}
 
 	} else {
 		log.Error().Msgf("unexpected to get here. This means the contract was validated yet it made it here? Action: %v", p.Contract.Action)
-		return IdpStatusFailure, unexpectedError()
+		return false
 	}
 
 	//----------------------------------------------------------------------------------
@@ -108,31 +154,19 @@ func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 	//----------------------------------------------------------------------------------
 	if p.Contract.GoldenPath.Url != nil {
 
-		var tag string
-		if p.Contract.GoldenPath.Tag != nil {
-			tag = *p.Contract.GoldenPath.Tag
+		err := p.GoldenPath.CloneGp()
+		if err != nil {
+			return false
 		}
 
-		gp := platform_gp.GetGoldenPath(*p.Contract.GoldenPath.Url,
-			*p.Contract.GoldenPath.Name,
-			*p.Contract.GoldenPath.Branch,
-			*p.Contract.GoldenPath.Path,
-			tag)
-
-		err := gp.CloneGp()
-
+		err = platform_gp.DeleteClonePathDir()
 		if err != nil {
-			return IdpStatusFailure, err
+			return false
 		}
 
 		log.Info().Msg("Checked out branch successfully.")
-
-		if !dryRun {
-			// TODO: clone into code git repo. git push code repo into desired repo..
-		}
 	}
 
-	// TODO IF NOT DRY-RUN: NEXT: clone gp into new repo
 	// TODO next: Kubernetes: create namespace and ensure namespace managed by ArgoCD
 
 	// Verify kubernetes deployment section
@@ -143,7 +177,7 @@ func (p *Processor) Execute(dryRun bool) (IdpStatus, error) {
 	// else if action == update-contract
 	// call dry-run-update-contract func
 
-	return IdpStatusFailure, nil
+	return true
 }
 
 func unexpectedError() error {

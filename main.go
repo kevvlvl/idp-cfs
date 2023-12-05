@@ -16,11 +16,11 @@ func main() {
 		if dryRunResult == contract.IdpStatusSuccess {
 			log.Info().Msgf("Successfuly completed a dry-run without errors. Will execute real actions now.")
 
-			//exec, _ := proc.Execute(false)
-			//
-			//if exec == contract.IdpStatusSuccess {
-			//	log.Info().Msgf("Successfuly executed the idp-cfs contract. Your are now ready to code!")
-			//}
+			exec, _ := proc.Execute(false)
+
+			if exec == contract.IdpStatusSuccess {
+				log.Info().Msgf("Successfuly executed the idp-cfs contract. Your are now ready to code!")
+			}
 		}
 	}
 }

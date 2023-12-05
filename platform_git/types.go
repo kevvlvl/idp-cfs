@@ -1,11 +1,14 @@
 package platform_git
 
-import "github.com/google/go-github/v56/github"
+import (
+	"flag"
+	"github.com/google/go-github/v56/github"
+)
 
 type Git interface {
 	GetOrganization(organizationName string) (*Organization, error)
 	GetRepository(name string) (*Repository, error)
-	CreateRepository(name string) (*Repository, error)
+	CreateRepository(name string) error
 }
 
 type GitCode struct {
@@ -37,3 +40,7 @@ const (
 	// CodeGitea for the code repository of type Gitea
 	CodeGitea = "gitea"
 )
+
+var GithubPrivateRepository = flag.Bool("private", false, "Will created repo be private.")
+var GithubDescription = flag.String("description", "", "Created by idp-cfs")
+var GithubAutoInit = flag.Bool("auto-init", false, "Pass true to create an initial commit with empty README.")

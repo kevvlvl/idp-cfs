@@ -34,7 +34,7 @@ type Contract struct {
 
 type Processor struct {
 	Contract   *Contract
-	GitCode    *platform_git.GithubCode
+	GitCode    *platform_git.GitCode
 	GoldenPath *platform_gp.GoldenPath
 }
 

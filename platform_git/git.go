@@ -42,3 +42,11 @@ func (c *GitCode) GetRepository(repo string) (*Repository, error) {
 		return nil, errors.New("not implemented yet")
 	}
 }
+
+func (c *GitCode) CreateRepository(name string) error {
+	if c.githubCode != nil {
+		return c.githubCode.CreateRepository(name)
+	} else {
+		return errors.New("not implemented yet")
+	}
+}

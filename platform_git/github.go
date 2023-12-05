@@ -3,6 +3,7 @@ package platform_git
 import (
 	"context"
 	"github.com/google/go-github/v56/github"
+	"github.com/rs/zerolog/log"
 	"os"
 )
 
@@ -61,10 +62,23 @@ func (c *GithubCode) GetRepository(name string) (*Repository, error) {
 	}, nil
 }
 
-func (c *GithubCode) CreateRepository(name string) (*Repository, error) {
+func (c *GithubCode) CreateRepository(name string) error {
 
-	// TODO: Create repository. return repository
-	// TODO NEXT STEP: push gp into this repository (if any defined). Prepare this work into a new tmp folder (/tmp/idp-cfs-code), cp gp (env CFS_GP_CHECKOUT_PATH) into this at desired default branch, then git push and delete this tmp folder)
+	newRepo := &github.Repository{
+		Name:        &name,
+		Private:     GithubPrivateRepository,
+		Description: GithubDescription,
+		AutoInit:    GithubAutoInit,
+	}
 
-	return nil, nil
+	repo, resp, err := c.GithubClient.Repositories.Create(context.Background(), "", newRepo)
+
+	err = validateApiResponse(resp, err, "Error trying to create repository")
+	if err != nil {
+		return err
+	}
+
+	log.Info().Msgf("Created the repo successfully! Created on (timestamp): %v", repo.CreatedAt)
+
+	return nil
 }
