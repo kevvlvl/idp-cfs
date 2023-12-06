@@ -37,7 +37,11 @@ func (c *GitCode) GetOrganization(org string) (*Organization, error) {
 func (c *GitCode) GetRepository(repo string) (*Repository, error) {
 
 	if c.githubCode != nil {
-		return c.githubCode.GetRepository(repo)
+
+		r, err := c.githubCode.GetRepository(repo)
+		c.Repository = r
+
+		return r, err
 	} else {
 		return nil, errors.New("not implemented yet")
 	}
@@ -49,4 +53,8 @@ func (c *GitCode) CreateRepository(name string) error {
 	} else {
 		return errors.New("not implemented yet")
 	}
+}
+
+func (c *GitCode) PushFiles(r *Repository, gpPath string) error {
+	return errors.New("not implemented yet")
 }

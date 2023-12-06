@@ -13,6 +13,7 @@ type Git interface {
 
 type GitCode struct {
 	githubCode *GithubCode
+	Repository *Repository
 }
 
 type GithubCode struct {

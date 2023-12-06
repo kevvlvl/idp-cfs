@@ -33,7 +33,7 @@ func GetGoldenPath(url string, name string, branch string, path string, tag stri
 
 func (gp *GoldenPath) CloneGp() error {
 
-	checkoutPath := getCheckoutPath()
+	checkoutPath := GetCheckoutPath()
 	err := DeleteClonePathDir()
 	if err != nil {
 
@@ -93,7 +93,7 @@ func (gp *GoldenPath) CloneGp() error {
 
 func DeleteClonePathDir() error {
 
-	checkoutPath := getCheckoutPath()
+	checkoutPath := GetCheckoutPath()
 	return os.RemoveAll(checkoutPath)
 }
 
@@ -118,7 +118,7 @@ func getRefForBranchName(r *git.Repository, branchName string) *plumbing.Referen
 	return res
 }
 
-func getCheckoutPath() string {
+func GetCheckoutPath() string {
 	checkoutPath := os.Getenv("CFS_GP_CHECKOUT_PATH")
 
 	if checkoutPath == "" {

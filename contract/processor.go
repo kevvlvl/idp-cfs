@@ -38,11 +38,6 @@ func GetProcessor(contractFile string) *Processor {
 // Execute allows you to run the idp either in dryRun mode, or in real life (dryRun = false)
 func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 
-	//----------------------------------------------------------------------------------
-	// GithubCode repository validation
-	//----------------------------------------------------------------------------------
-	// Search the code repo's organization
-
 	dryRunSuccess := performDryRun(p)
 
 	if dryRunSuccess && dryRunMode {
@@ -53,16 +48,29 @@ func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 
 		if p.Contract.Action == NewContract {
 
-			err := p.GitCode.CreateRepository(p.Contract.Code.Repo)
+			//----------------------------------------------------------------------------------
+			// Create repository
+			//----------------------------------------------------------------------------------
 
-			if err != nil {
-				return IdpStatusFailure, err
-			} else {
-				return IdpStatusSuccess, nil
-			}
+			err := p.GitCode.CreateRepository(p.Contract.Code.Repo)
+			return evaluateIdpStatus(err)
 
 		} else if p.Contract.Action == UpdateContract {
+
+			//----------------------------------------------------------------------------------
+			// Update repository
+			//----------------------------------------------------------------------------------
+
 			log.Error().Msg("Not implemented yet")
+		}
+
+		//----------------------------------------------------------------------------------
+		// Push Golden Path into new or updated Repo
+		//----------------------------------------------------------------------------------
+
+		if p.Contract.GoldenPath.Url != nil {
+			err := p.GitCode.PushFiles(p.GitCode.Repository, platform_gp.GetCheckoutPath())
+			return evaluateIdpStatus(err)
 		}
 
 		return IdpStatusSuccess, nil
@@ -76,7 +84,6 @@ func performDryRun(p *Processor) bool {
 	//----------------------------------------------------------------------------------
 	// GithubCode repository validation
 	//----------------------------------------------------------------------------------
-	// Search the code repo's organization
 
 	code := platform_git.GetCode(p.Contract.Code.Tool)
 
@@ -185,4 +192,13 @@ func unexpectedError() error {
 
 	log.Error().Msg(m)
 	return errors.New(m)
+}
+
+func evaluateIdpStatus(e error) (IdpStatus, error) {
+
+	if e != nil {
+		return IdpStatusFailure, e
+	} else {
+		return IdpStatusSuccess, nil
+	}
 }

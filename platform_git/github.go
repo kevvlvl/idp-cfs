@@ -7,12 +7,14 @@ import (
 	"os"
 )
 
+var ctx = context.Background()
+
 func GetGithubCode() *GithubCode {
 
 	pat := os.Getenv("CFS_GITHUB_PAT")
 	client := github.NewClient(nil).WithAuthToken(pat)
 
-	user, resp, err := client.Users.Get(context.Background(), "")
+	user, resp, err := client.Users.Get(ctx, "")
 
 	err = validateApiResponse(resp, err, "Error trying to get User")
 	if err != nil {
@@ -27,7 +29,7 @@ func GetGithubCode() *GithubCode {
 
 func (c *GithubCode) GetOrganization(organizationName string) (*Organization, error) {
 
-	org, resp, err := c.GithubClient.Organizations.Get(context.Background(), organizationName)
+	org, resp, err := c.GithubClient.Organizations.Get(ctx, organizationName)
 
 	err = validateApiResponse(resp, err, "Error trying to get organization")
 	if err != nil {
@@ -42,7 +44,7 @@ func (c *GithubCode) GetOrganization(organizationName string) (*Organization, er
 
 func (c *GithubCode) GetRepository(name string) (*Repository, error) {
 
-	repo, resp, err := c.GithubClient.Repositories.Get(context.Background(), *c.githubUser.Login, name)
+	repo, resp, err := c.GithubClient.Repositories.Get(ctx, *c.githubUser.Login, name)
 
 	err = validateApiResponse(resp, err, "Error trying to get repository")
 	if err != nil {
@@ -71,7 +73,7 @@ func (c *GithubCode) CreateRepository(name string) error {
 		AutoInit:    GithubAutoInit,
 	}
 
-	repo, resp, err := c.GithubClient.Repositories.Create(context.Background(), "", newRepo)
+	repo, resp, err := c.GithubClient.Repositories.Create(ctx, "", newRepo)
 
 	err = validateApiResponse(resp, err, "Error trying to create repository")
 	if err != nil {
