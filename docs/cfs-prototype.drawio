@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2023-11-23T17:27:13.884Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/22.1.2 Chrome/114.0.5735.289 Electron/25.9.4 Safari/537.36" etag="-7_fcd-fi77A1ggLxsqB" version="22.1.2" type="device" pages="5">
+<mxfile host="Electron" modified="2023-12-06T03:45:53.797Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/22.1.2 Chrome/114.0.5735.289 Electron/25.9.4 Safari/537.36" etag="jxe3F-LYIakPIEilNb1t" version="22.1.2" type="device" pages="5">
   <diagram name="HLD-arch" id="10SLt3vqDwuO0nkdjIOx">
     <mxGraphModel dx="1434" dy="766" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
@@ -76,6 +76,9 @@
         </mxCell>
         <mxCell id="2ICjozhHIiWb4r7ofzIY-2" value="Git Repo" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
           <mxGeometry x="210" y="330" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="3dS_kzBVbe_Fa7Cau68I-1" value="&lt;h1&gt;cfs-operator&lt;/h1&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;- Fully written in Rust&lt;/div&gt;&lt;div&gt;- provides custom CRDs to:&lt;/div&gt;&lt;div&gt;&amp;nbsp; - create ns&lt;/div&gt;&lt;div&gt;&amp;nbsp; - create netpol&lt;/div&gt;&lt;div&gt;&amp;nbsp; - sets the ns managed by an ArgoCD (if set)&lt;/div&gt;" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="350" y="430" width="363" height="150" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
