@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/rs/zerolog/log"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -57,11 +58,12 @@ func (c *GitCode) CreateRepository(name string) error {
 	}
 }
 
-func (c *GitCode) PushFiles(r *Repository, gpPath string) error {
+func (c *GitCode) PushFiles(r *Repository, gpPath string, relativePath string) error {
 
 	var files []string
+	absolutePath := path.Join(gpPath, relativePath)
 
-	err := filepath.Walk(gpPath, func(filepath string, info os.FileInfo, err error) error {
+	err := filepath.Walk(absolutePath, func(filepath string, info os.FileInfo, err error) error {
 
 		files = append(files, filepath)
 		return nil
@@ -73,6 +75,7 @@ func (c *GitCode) PushFiles(r *Repository, gpPath string) error {
 	log.Info().Msgf("List of files to commit: %+v", files)
 
 	// TODO use go-git to connect to the repository (r) and add the files (files) add, commit, and push
+	// https://github.com/src-d/go-git/blob/master/_examples/clone/auth/basic/access_token/main.go
 
 	return errors.New("not implemented yet")
 }

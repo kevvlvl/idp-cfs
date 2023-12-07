@@ -7,20 +7,14 @@ import (
 
 func main() {
 
-	// TODO: receive in Request Body (directly in a POST or through CLI)
+	// TODO: Receive parameters through CLI call + env varsh
 	proc := contract.GetProcessor("platform-order.yaml")
 
 	if proc != nil {
-		dryRunResult, _ := proc.Execute(true)
+		dryRunResult, _ := proc.Execute(false)
 
 		if dryRunResult == contract.IdpStatusSuccess {
-			log.Info().Msgf("Successfuly completed a dry-run without errors. Will execute real actions now.")
-
-			exec, _ := proc.Execute(false)
-
-			if exec == contract.IdpStatusSuccess {
-				log.Info().Msgf("Successfuly executed the idp-cfs contract. Your are now ready to code!")
-			}
+			log.Info().Msgf("Successfuly executed the idp-cfs contract. Your are now ready to code!")
 		}
 	}
 }

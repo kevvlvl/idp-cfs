@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func GetGoldenPath(url string, name string, branch string, path string, tag string) GoldenPath {
+func GetGoldenPath(url string, branch string, path string, tag string) GoldenPath {
 
 	// if github, set tool to github
 
@@ -23,7 +23,6 @@ func GetGoldenPath(url string, name string, branch string, path string, tag stri
 
 	return GoldenPath{
 		Tool:   tool,
-		Name:   name,
 		URL:    url,
 		Branch: branch,
 		Path:   path,

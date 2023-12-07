@@ -65,14 +65,12 @@ func validate(contract *Contract) bool {
 		// Validate Golden-Path section
 
 		validGpValuesOmit = contract.GoldenPath.Url == nil &&
-			contract.GoldenPath.Name == nil &&
 			contract.GoldenPath.Path == nil &&
 			contract.GoldenPath.Branch == nil &&
 			contract.GoldenPath.Tag == nil
 
 		if !validGpValuesOmit {
 			validGpValues = *contract.GoldenPath.Url != "" &&
-				*contract.GoldenPath.Name != "" &&
 				*contract.GoldenPath.Path != "" &&
 				*contract.GoldenPath.Branch != ""
 

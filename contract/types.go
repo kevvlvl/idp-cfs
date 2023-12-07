@@ -17,7 +17,6 @@ type Contract struct {
 
 	GoldenPath struct {
 		Url    *string `yaml:"url,omitempty"`
-		Name   *string `yaml:"name,omitempty"`
 		Path   *string `yaml:"path,omitempty"`
 		Branch *string `yaml:"branch,omitempty"`
 		Tag    *string `yaml:"tag,omitempty"`
