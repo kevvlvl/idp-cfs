@@ -127,6 +127,16 @@ func GetCheckoutPath() string {
 	return checkoutPath
 }
 
+func GetCheckinPath() string {
+	checkinPath := os.Getenv("CFS_GP_CHECKIN_PATH")
+
+	if checkinPath == "" {
+		checkinPath = "/tmp/gp-push"
+	}
+
+	return checkinPath
+}
+
 func failedCloneGpError() error {
 	return errors.New("failed to clone the GoldenPath")
 }

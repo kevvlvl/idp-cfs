@@ -78,11 +78,13 @@ func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 
 					log.Info().Msg("create the repo...")
 
-					//err := p.GitCode.CreateRepository(p.Contract.Code.Repo)
-					//
-					//if err != nil {
-					//	return IdpStatusFailure, err
-					//}
+					newCodeRepo, err := p.GitCode.CreateRepository(p.Contract.Code.Repo, p.Contract.Code.Branch)
+
+					if err != nil {
+						return IdpStatusFailure, err
+					}
+
+					p.GitCode.Repository = newCodeRepo
 				}
 
 			} else {
@@ -160,7 +162,11 @@ func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 			// Push Golden Path into new or updated Repo
 			//----------------------------------------------------------------------------------
 
-			err := p.GitCode.PushFiles(p.GitCode.Repository, platform_gp.GetCheckoutPath(), p.GoldenPath.Path)
+			err := p.GitCode.PushFiles(
+				*p.GitCode.Repository.URL,
+				p.Contract.Code.Branch,
+				platform_gp.GetCheckoutPath(),
+				p.GoldenPath.Path)
 
 			if err != nil {
 				return IdpStatusFailure, err

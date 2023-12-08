@@ -2,10 +2,16 @@ package platform_git
 
 import (
 	"errors"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/rs/zerolog/log"
+	"idp-cfs/platform_gp"
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 )
 
 func GetCode(tool string) *GitCode {
@@ -50,15 +56,15 @@ func (c *GitCode) GetRepository(repo string) (*Repository, error) {
 	}
 }
 
-func (c *GitCode) CreateRepository(name string) error {
+func (c *GitCode) CreateRepository(repoName string, branch string) (*Repository, error) {
 	if c.githubCode != nil {
-		return c.githubCode.CreateRepository(name)
+		return c.githubCode.CreateRepository(repoName, branch)
 	} else {
-		return errors.New("not implemented yet")
+		return nil, errors.New("not implemented yet")
 	}
 }
 
-func (c *GitCode) PushFiles(r *Repository, gpPath string, relativePath string) error {
+func (c *GitCode) PushFiles(url string, branch string, gpPath string, relativePath string) error {
 
 	var files []string
 	absolutePath := path.Join(gpPath, relativePath)
@@ -76,6 +82,76 @@ func (c *GitCode) PushFiles(r *Repository, gpPath string, relativePath string) e
 
 	// TODO use go-git to connect to the repository (r) and add the files (files) add, commit, and push
 	// https://github.com/src-d/go-git/blob/master/_examples/clone/auth/basic/access_token/main.go
+
+	var pat = ""
+	var user = ""
+
+	if c.githubCode != nil {
+		pat = os.Getenv("CFS_GITHUB_PAT")
+		user = os.Getenv("CFS_GITHUB_USER")
+	}
+
+	newCodeRepo, err := git.PlainClone(platform_gp.GetCheckinPath(), false, &git.CloneOptions{
+		URL: url,
+		Auth: &http.BasicAuth{
+			Username: user,
+			Password: pat,
+		},
+		ReferenceName: plumbing.NewBranchReferenceName(branch),
+	})
+
+	if err != nil {
+		log.Error().Msgf("Failed to clone the repo. Error: %v", err)
+		return err
+	}
+
+	w, err := newCodeRepo.Worktree()
+
+	if err != nil {
+		log.Error().Msgf("Failed to return worktree of the repo. Error: %v", err)
+		return err
+	}
+
+	for _, file := range files {
+		_, err := w.Add(file)
+		if err != nil {
+			log.Error().Msgf("Failed to add file %s to commit. Error: %v", file, err)
+		}
+	}
+
+	status, err := w.Status()
+
+	if err != nil {
+		log.Error().Msgf("Failed to get status. Error: %v", err)
+		return err
+	}
+
+	log.Info().Msgf("Status of the repo before commit push: %+v", status)
+
+	commit, err := w.Commit("Adding GP as per idp-cfs contract", &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "idp-cfs",
+			Email: "idp-cfs@kevvlvl.github.noreply.com",
+			When:  time.Now(),
+		},
+	})
+
+	if err != nil {
+		log.Error().Msgf("Failed to commit. Error: %v", err)
+		return err
+	}
+
+	commitObj, err := newCodeRepo.CommitObject(commit)
+	if err != nil {
+		log.Error().Msgf("Failed for repo to commit. Error: %v", err)
+	}
+
+	log.Info().Msgf("Repo Commit. %v", commitObj)
+
+	err = newCodeRepo.Push(&git.PushOptions{})
+	if err != nil {
+		log.Error().Msgf("Failed for push commit changes. Error: %v", err)
+	}
 
 	return errors.New("not implemented yet")
 }

@@ -2,7 +2,7 @@
 action: new-contract
 
 code:
-  # Possible options: github, gitlab, gite-a
+  # Possible options: github, gitlab, gitea
   tool: github
   # org (optional) the organization in your git system
 #  org: kevvlvl

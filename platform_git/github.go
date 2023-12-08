@@ -64,23 +64,29 @@ func (c *GithubCode) GetRepository(name string) (*Repository, error) {
 	}, nil
 }
 
-func (c *GithubCode) CreateRepository(name string) error {
+func (c *GithubCode) CreateRepository(repoName string, branch string) (*Repository, error) {
 
 	newRepo := &github.Repository{
-		Name:        &name,
-		Private:     GithubPrivateRepository,
-		Description: GithubDescription,
-		AutoInit:    GithubAutoInit,
+		Name:          &repoName,
+		Private:       GithubPrivateRepository,
+		Description:   GithubDescription,
+		AutoInit:      GithubAutoInit,
+		DefaultBranch: &branch,
 	}
 
 	repo, resp, err := c.GithubClient.Repositories.Create(ctx, "", newRepo)
 
 	err = validateApiResponse(resp, err, "Error trying to create repository")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	log.Info().Msgf("Created the repo successfully! Created on (timestamp): %v", repo.CreatedAt)
 
-	return nil
+	return &Repository{
+		Name:         repo.Name,
+		Organization: repo.Organization.Name,
+		Owner:        repo.Owner.Name,
+		URL:          repo.URL,
+	}, nil
 }

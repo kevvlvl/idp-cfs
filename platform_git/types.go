@@ -8,7 +8,7 @@ import (
 type Git interface {
 	GetOrganization(organizationName string) (*Organization, error)
 	GetRepository(name string) (*Repository, error)
-	CreateRepository(name string) error
+	CreateRepository(repoName string, branch string) (*Repository, error)
 }
 
 type GitCode struct {
