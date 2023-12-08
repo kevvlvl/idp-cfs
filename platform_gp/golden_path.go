@@ -40,13 +40,10 @@ func (gp *GoldenPath) CloneGp() error {
 		return failedCloneGpError()
 	}
 
-	gitOptions := &git.CloneOptions{
-		URL:          gp.URL,
-		Progress:     os.Stdout,
-		SingleBranch: false,
-	}
-
-	r, err := git.PlainClone(checkoutPath, false, gitOptions)
+	r, err := git.PlainClone(checkoutPath, false, &git.CloneOptions{
+		URL:      gp.URL,
+		Progress: os.Stdout,
+	})
 
 	if err != nil {
 		log.Error().Msgf("Error trying to clone the gp URL %v - Error: %v", gp.URL, err)
@@ -90,12 +87,6 @@ func (gp *GoldenPath) CloneGp() error {
 	return nil
 }
 
-func DeleteClonePathDir() error {
-
-	checkoutPath := GetCheckoutPath()
-	return os.RemoveAll(checkoutPath)
-}
-
 // showRefsFound outputs all found Refs for the git repository in input
 func getRefForBranchName(r *git.Repository, branchName string) *plumbing.Reference {
 	var res *plumbing.Reference
@@ -121,20 +112,14 @@ func GetCheckoutPath() string {
 	checkoutPath := os.Getenv("CFS_GP_CHECKOUT_PATH")
 
 	if checkoutPath == "" {
-		checkoutPath = "/tmp/gp"
+		checkoutPath = "/tmp/idp-cfs-gp"
 	}
 
 	return checkoutPath
 }
 
-func GetCheckinPath() string {
-	checkinPath := os.Getenv("CFS_GP_CHECKIN_PATH")
-
-	if checkinPath == "" {
-		checkinPath = "/tmp/gp-push"
-	}
-
-	return checkinPath
+func DeleteClonePathDir() error {
+	return os.RemoveAll(GetCheckoutPath())
 }
 
 func failedCloneGpError() error {

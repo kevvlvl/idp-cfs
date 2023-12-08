@@ -2,12 +2,15 @@ package platform_git
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/rs/zerolog/log"
 	"idp-cfs/platform_gp"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -64,21 +67,19 @@ func (c *GitCode) CreateRepository(repoName string, branch string) (*Repository,
 	}
 }
 
-func (c *GitCode) PushFiles(url string, branch string, gpPath string, relativePath string) error {
+func (c *GitCode) PushFiles(url string, branch string, relativePath string) error {
 
-	var files []string
-	absolutePath := path.Join(gpPath, relativePath)
+	// FIXME refactor all the disgusting error handling.
 
-	err := filepath.Walk(absolutePath, func(filepath string, info os.FileInfo, err error) error {
+	branchRef := fmt.Sprintf("refs/heads/%s", branch)
+	gpPath := platform_gp.GetCheckoutPath()
+	err := deleteCodePath()
 
-		files = append(files, filepath)
-		return nil
-	})
+	// FIXME refactor error handling
+	os.Mkdir(getCodePath(), 0775)
 	if err != nil {
-		log.Error().Msgf("Failed to walk the directory %s. Error: %v", gpPath, err)
+		log.Error().Msgf("Failed to cleanup the code path. Error: %v", err)
 	}
-
-	log.Info().Msgf("List of files to commit: %+v", files)
 
 	var pat = ""
 	var user = ""
@@ -88,43 +89,78 @@ func (c *GitCode) PushFiles(url string, branch string, gpPath string, relativePa
 		user = os.Getenv("CFS_GITHUB_USER")
 	}
 
-	newCodeRepo, err := git.PlainClone(platform_gp.GetCheckinPath(), false, &git.CloneOptions{
+	r, err := git.PlainClone(getCodePath(), false, &git.CloneOptions{
 		URL: url,
 		Auth: &http.BasicAuth{
 			Username: user,
 			Password: pat,
 		},
-		ReferenceName: plumbing.NewBranchReferenceName(branch),
+		ReferenceName: plumbing.ReferenceName(branchRef),
+		Progress:      os.Stdout,
 	})
 
-	if err != nil {
+	if err != nil && err.Error() != "remote repository is empty" {
 		log.Error().Msgf("Failed to clone the repo. Error: %v", err)
 		return err
 	}
 
-	w, err := newCodeRepo.Worktree()
-
+	_, err = r.Head()
 	if err != nil {
-		log.Error().Msgf("Failed to return worktree of the repo. Error: %v", err)
+		log.Error().Msgf("Failed to return HEAD. Error: %v", err)
 		return err
 	}
 
-	for _, file := range files {
-		_, err := w.Add(file)
-		if err != nil {
-			log.Error().Msgf("Failed to add file %s to commit. Error: %v", file, err)
-		}
+	w, err := r.Worktree()
+	if err != nil {
+		log.Error().Msgf("Failed to return worktree. Error: %v", err)
+		return err
 	}
 
-	status, err := w.Status()
+	err = w.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.ReferenceName(branchRef),
+	})
 
+	if err != nil {
+		log.Error().Msgf("Failed to checkout on a new branch. Error: %v", err)
+		return err
+	}
+
+	absolutePath := path.Join(gpPath, relativePath)
+
+	err = filepath.Walk(absolutePath, func(file string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			// FIXME refactor
+			srcFile, _ := os.Open(file)
+			defer srcFile.Close()
+
+			destFilePath := filepath.Join(getCodePath(), info.Name())
+			destFile, _ := os.Create(destFilePath)
+			defer destFile.Close()
+
+			_, err := io.Copy(destFile, srcFile)
+			if err != nil {
+				log.Error().Msgf("Failed to copy the file from gp path to the new code path. Error: %v", err)
+			}
+
+			// FIXME refactor - make sure working dir is code path!
+			_, err = w.Add(info.Name())
+			if err != nil {
+				log.Error().Msgf("Failed to add file %s to commit. Error: %v", file, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		log.Error().Msgf("Failed to walk the directory %s. Error: %v", gpPath, err)
+	}
+
+	_, err = w.Status()
 	if err != nil {
 		log.Error().Msgf("Failed to get status. Error: %v", err)
 		return err
 	}
 
-	log.Info().Msgf("Status of the repo before commit push: %+v", status)
-
+	// FIXME refactor parameters. externalize author into app config
 	commit, err := w.Commit("Adding GP as per idp-cfs contract", &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "idp-cfs",
@@ -138,17 +174,38 @@ func (c *GitCode) PushFiles(url string, branch string, gpPath string, relativePa
 		return err
 	}
 
-	commitObj, err := newCodeRepo.CommitObject(commit)
-	if err != nil {
-		log.Error().Msgf("Failed for repo to commit. Error: %v", err)
-	}
+	log.Info().Msgf("Files Commit. %v", commit)
 
-	log.Info().Msgf("Repo Commit. %v", commitObj)
-
-	err = newCodeRepo.Push(&git.PushOptions{})
+	// FIXME refactor Refspec
+	err = r.Push(&git.PushOptions{
+		RemoteName: "origin",
+		RefSpecs: []config.RefSpec{
+			config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", branch, branch)),
+		},
+		Auth: &http.BasicAuth{
+			Username: user,
+			Password: pat,
+		},
+	})
 	if err != nil {
 		log.Error().Msgf("Failed for push commit changes. Error: %v", err)
 	}
 
 	return errors.New("not implemented yet")
+}
+
+func getCodePath() string {
+
+	checkoutPath := os.Getenv("CFS_GP_CODE_CLONE_PATH")
+
+	if checkoutPath == "" {
+		checkoutPath = "/tmp/idp-cfs-code"
+	}
+
+	return checkoutPath
+
+}
+
+func deleteCodePath() error {
+	return os.RemoveAll(getCodePath())
 }

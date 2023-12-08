@@ -63,6 +63,7 @@ func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 	// Search the code repo's organization
 
 	repo, err := code.GetRepository(p.Contract.Code.Repo)
+	p.GitCode.Repository = repo
 
 	if p.Contract.Action == NewContract {
 
@@ -79,12 +80,12 @@ func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 					log.Info().Msg("create the repo...")
 
 					newCodeRepo, err := p.GitCode.CreateRepository(p.Contract.Code.Repo, p.Contract.Code.Branch)
+					p.GitCode.Repository = newCodeRepo
 
 					if err != nil {
 						return IdpStatusFailure, err
 					}
 
-					p.GitCode.Repository = newCodeRepo
 				}
 
 			} else {
@@ -165,7 +166,6 @@ func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 			err := p.GitCode.PushFiles(
 				*p.GitCode.Repository.URL,
 				p.Contract.Code.Branch,
-				platform_gp.GetCheckoutPath(),
 				p.GoldenPath.Path)
 
 			if err != nil {

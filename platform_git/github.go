@@ -51,27 +51,21 @@ func (c *GithubCode) GetRepository(name string) (*Repository, error) {
 		return nil, err
 	}
 
-	repoOrg := ""
-	if repo.Organization != nil {
-		repoOrg = *repo.Organization.Name
-	}
-
 	return &Repository{
 		Name:         repo.Name,
-		Organization: &repoOrg,
+		Organization: getOrganizationName(repo),
 		Owner:        repo.Owner.Name,
-		URL:          repo.URL,
+		URL:          repo.CloneURL,
 	}, nil
 }
 
 func (c *GithubCode) CreateRepository(repoName string, branch string) (*Repository, error) {
 
 	newRepo := &github.Repository{
-		Name:          &repoName,
-		Private:       GithubPrivateRepository,
-		Description:   GithubDescription,
-		AutoInit:      GithubAutoInit,
-		DefaultBranch: &branch,
+		Name:        &repoName,
+		Private:     GithubPrivateRepository,
+		Description: GithubDescription,
+		AutoInit:    GithubAutoInit,
 	}
 
 	repo, resp, err := c.GithubClient.Repositories.Create(ctx, "", newRepo)
@@ -83,10 +77,32 @@ func (c *GithubCode) CreateRepository(repoName string, branch string) (*Reposito
 
 	log.Info().Msgf("Created the repo successfully! Created on (timestamp): %v", repo.CreatedAt)
 
+	emptyCommit := &github.RepositoryContentFileOptions{
+		Message: github.String("Initial commit"),
+		Content: []byte(""),
+	}
+
+	login := *c.githubUser.Login
+
+	_, _, err = c.GithubClient.Repositories.CreateFile(ctx, login, repoName, "README.md", emptyCommit)
+	if err != nil {
+		log.Error().Msgf("Error creating a file for the empty commit. Error: %v", err)
+		return nil, err
+	}
+
 	return &Repository{
 		Name:         repo.Name,
-		Organization: repo.Organization.Name,
+		Organization: getOrganizationName(repo),
 		Owner:        repo.Owner.Name,
-		URL:          repo.URL,
+		URL:          repo.CloneURL,
 	}, nil
+}
+
+func getOrganizationName(r *github.Repository) *string {
+
+	if r.Organization != nil {
+		return r.Organization.Name
+	} else {
+		return nil
+	}
 }
