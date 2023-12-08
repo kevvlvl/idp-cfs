@@ -80,9 +80,6 @@ func (c *GitCode) PushFiles(url string, branch string, gpPath string, relativePa
 
 	log.Info().Msgf("List of files to commit: %+v", files)
 
-	// TODO use go-git to connect to the repository (r) and add the files (files) add, commit, and push
-	// https://github.com/src-d/go-git/blob/master/_examples/clone/auth/basic/access_token/main.go
-
 	var pat = ""
 	var user = ""
 
