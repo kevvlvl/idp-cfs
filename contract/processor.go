@@ -1,19 +1,21 @@
 package contract
 
 import (
+	"errors"
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"idp-cfs/platform_git"
 	"idp-cfs/platform_gp"
 	"strings"
 )
 
-func GetProcessor(contractFile string) *Processor {
+func GetProcessor(contractFile string) (*Processor, error) {
 
 	c, err := Load(contractFile)
 
 	if err != nil {
-		log.Error().Msg("ERROR when loading contract")
-		return nil
+		log.Error().Msgf("Error loading contract: %v", err)
+		return nil, err
 	}
 
 	var tag string
@@ -21,159 +23,44 @@ func GetProcessor(contractFile string) *Processor {
 		tag = *c.GoldenPath.Tag
 	}
 
-	gp := platform_gp.GetGoldenPath(*c.GoldenPath.Url,
-		*c.GoldenPath.Branch,
-		*c.GoldenPath.Path,
-		tag)
+	gp := platform_gp.GetGoldenPath(*c.GoldenPath.Url, *c.GoldenPath.Branch, *c.GoldenPath.Path, tag)
 
 	return &Processor{
 		Contract:   c,
 		GitCode:    platform_git.GetCode(c.Code.Tool),
 		GoldenPath: &gp,
-	}
+	}, nil
 }
 
 // Execute allows you to run the idp either in dryRun mode, or in real life (dryRun = false)
 func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 
-	//----------------------------------------------------------------------------------
-	// GithubCode repository validation
-	//----------------------------------------------------------------------------------
+	// Contract Code section
 
 	code := platform_git.GetCode(p.Contract.Code.Tool)
-
-	if p.Contract.Code.Org != nil {
-
-		log.Info().Msgf("Contract Org defined. Search for %v", p.Contract.Code.Org)
-
-		orgFound, err := code.GetOrganization(*p.Contract.Code.Org)
-
-		if orgFound == nil && err != nil {
-			return IdpStatusFailure, err
-		}
-
-		log.Info().Msgf("Org found: %v", orgFound)
-	} else {
-		log.Info().Msg("No Contract Org defined.")
+	if code == nil {
+		log.Error().Msg("Failed to obtain Git client for Code section.")
+		return IdpStatusFailure, errors.New("did not obtain Git client for Code section")
 	}
 
-	//----------------------------------------------------------------------------------
-	// GithubCode repository validation
-	//----------------------------------------------------------------------------------
-	// Search the code repo's organization
-
-	repo, err := code.GetRepository(p.Contract.Code.Repo)
-	p.GitCode.Repository = repo
-
-	if p.Contract.Action == NewContract {
-
-		// In the case of a new infra request, we don't want to find an existing Git repo
-
-		if err != nil {
-			if strings.HasPrefix(err.Error(), "HTTP404") {
-
-				log.Info().Msg("new desired repo does not exist.")
-
-				// For the action new-contract, we want a HTTP 404! Otherwise, a new repo cannot be created.
-				if !dryRunMode {
-
-					log.Info().Msg("create the repo...")
-
-					newCodeRepo, err := p.GitCode.CreateRepository(p.Contract.Code.Repo, p.Contract.Code.Branch)
-					p.GitCode.Repository = newCodeRepo
-
-					if err != nil {
-						return IdpStatusFailure, err
-					}
-
-				}
-
-			} else {
-				log.Error().Msgf(err.Error())
-
-				if err != nil {
-					return IdpStatusFailure, err
-				}
-			}
-		} else {
-
-			if repo != nil {
-				repoFoundMsg := "repository was found and returned. Make sure to review the code repo name and desired contract action"
-
-				log.Error().Msgf(repoFoundMsg)
-				if err != nil {
-					return IdpStatusFailure, err
-				}
-			} else {
-
-				if err != nil {
-					return IdpStatusFailure, err
-				}
-			}
-		}
-
-	} else if p.Contract.Action == UpdateContract {
-
-		// In the case of an update infra request, we want to find the repo and branch name
-		if err != nil {
-			log.Error().Msgf(err.Error())
-			if err != nil {
-				return IdpStatusFailure, err
-			}
-
-		} else {
-
-			if repo != nil {
-
-				// For the action update-contract, we want an HTTP 2xx! Otherwise, no update can be done
-				log.Info().Msgf("found existing repo %v", repo)
-			} else {
-				if err != nil {
-					return IdpStatusFailure, err
-				}
-			}
-		}
-
-	} else {
-		log.Error().Msgf("unexpected to get here. This means the contract was validated yet it made it here? Action: %v", p.Contract.Action)
-		if err != nil {
-			return IdpStatusFailure, err
-		}
+	err := validateContractCodeOrganization(p, code)
+	if err != nil {
+		log.Error().Msg("Failed to validate contract code organization")
+		return IdpStatusFailure, err
 	}
 
-	//----------------------------------------------------------------------------------
-	// Golden path section validation
-	//----------------------------------------------------------------------------------
-	if p.Contract.GoldenPath.Url != nil {
+	err = validateContractCodeRepo(dryRunMode, p, code)
+	if err != nil {
+		log.Error().Msg("Failed to validate contract code repo")
+		return IdpStatusFailure, err
+	}
 
-		err := p.GoldenPath.CloneGp()
-		if err != nil {
-			return IdpStatusFailure, err
-		}
+	// Golden Path Code section
 
-		if dryRunMode {
-			// Delete the cloned repo if in dry-run. Otherwise, keep it to push this in the new code git repo
-
-			err := platform_gp.DeleteClonePathDir()
-			if err != nil {
-				return IdpStatusFailure, err
-			}
-		} else {
-			//----------------------------------------------------------------------------------
-			// Push Golden Path into new or updated Repo
-			//----------------------------------------------------------------------------------
-
-			err := p.GitCode.PushFiles(
-				*p.GitCode.Repository.URL,
-				p.Contract.Code.Branch,
-				p.GoldenPath.Path)
-
-			if err != nil {
-				return IdpStatusFailure, err
-			}
-		}
-
-		log.Info().Msg("Checked out branch successfully.")
+	err = validateGoldenPath(dryRunMode, p)
+	if err != nil {
+		log.Error().Msg("Failed to validate the golden path")
+		return IdpStatusFailure, err
 	}
 
 	// TODO next: Kubernetes: create namespace and ensure namespace managed by ArgoCD
@@ -187,4 +74,93 @@ func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 	// call dry-run-update-contract func
 
 	return IdpStatusSuccess, nil
+}
+
+func validateContractCodeOrganization(p *Processor, code *platform_git.GitCode) error {
+
+	if p.Contract.Code.Org != nil {
+
+		org, err := code.GetOrganization(*p.Contract.Code.Org)
+		p.GitCode.Organization = org
+
+		if org == nil && err != nil {
+			return err
+		}
+
+	} else {
+		log.Info().Msg("Contract does not define a Code organization.")
+	}
+
+	return nil
+}
+
+func validateContractCodeRepo(dryRunMode bool, p *Processor, code *platform_git.GitCode) error {
+
+	repo, err := code.GetRepository(p.Contract.Code.Repo)
+	p.GitCode.Repository = repo
+
+	if p.Contract.Action == NewContract {
+
+		// HTTP 404 when the request is to create a new repo is normal. we expect this response code
+		if repo == nil && err != nil && strings.HasPrefix(err.Error(), "HTTP404") {
+
+			log.Info().Msgf("Repo %s does not exist.", p.Contract.Code.Repo)
+
+			if !dryRunMode {
+
+				newCodeRepo, err := p.GitCode.CreateRepository(p.Contract.Code.Repo, p.Contract.Code.Branch)
+				p.GitCode.Repository = newCodeRepo
+
+				if err != nil {
+					return err
+				}
+			}
+		} else if repo != nil {
+
+			repoFound := fmt.Sprint("found Repository when we did not expect one. Review contract code repo name")
+			log.Warn().Msgf(repoFound)
+			return errors.New(repoFound)
+		} else {
+			log.Error().Msgf("Unexpected error returned: %v", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateGoldenPath(dryRunMode bool, p *Processor) error {
+
+	if p.Contract.GoldenPath.Url != nil {
+
+		err := p.GoldenPath.CloneGp()
+		if err != nil {
+			log.Error().Msgf("failed to clone the repo: %v", err)
+			return err
+		}
+
+		if dryRunMode {
+
+			log.Info().Msg("Dry-Run mode enabled. Delete the golden path repo we just cloned.")
+			// Delete the cloned repo if in dry-run. Otherwise, keep it to push this in the new code git repo
+
+			err := platform_gp.DeleteClonePathDir()
+			if err != nil {
+				log.Error().Msgf("failed to delete the clone path: %v", err)
+				return err
+			}
+		} else {
+
+			// Push Golden Path into new or updated Repo
+			err := p.GitCode.PushFiles(*p.GitCode.Repository.URL, p.Contract.Code.Branch, p.GoldenPath.Path)
+			if err != nil {
+				log.Error().Msgf("Failed to push files to the code repo: %v", err)
+				return err
+			}
+		}
+
+		log.Info().Msg("Checked out branch successfully.")
+	}
+
+	return nil
 }

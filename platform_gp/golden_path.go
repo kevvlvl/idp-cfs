@@ -46,12 +46,12 @@ func (gp *GoldenPath) CloneGp() error {
 	})
 
 	if err != nil {
-		log.Error().Msgf("Error trying to clone the gp URL %v - Error: %v", gp.URL, err)
+		log.Error().Msgf("Error trying to clone the gp URL %v: %v", gp.URL, err)
 	}
 
 	headRef, err := r.Head()
 	if err != nil {
-		log.Error().Msgf("Unable to return reference of HEAD. Error: %v", err)
+		log.Error().Msgf("Unable to return reference of HEAD: %v", err)
 		return failedCloneGpError()
 	}
 
@@ -64,7 +64,7 @@ func (gp *GoldenPath) CloneGp() error {
 
 	worktree, err := r.Worktree()
 	if err != nil {
-		log.Error().Msgf("Error trying to get worktree for the repository. Error: %v", err)
+		log.Error().Msgf("Error trying to get worktree for the repository: %v", err)
 		return failedCloneGpError()
 	}
 
@@ -74,14 +74,14 @@ func (gp *GoldenPath) CloneGp() error {
 	})
 
 	if err != nil {
-		log.Error().Msgf("Error trying to checkout the branch. Error: %v", err)
+		log.Error().Msgf("Error trying to checkout the branch: %v", err)
 		return failedCloneGpError()
 	}
 
 	if _, err := os.Stat(path.Join(checkoutPath, gp.Path)); !os.IsNotExist(err) {
 		log.Info().Msgf("Succesfully verified that path %v exists in the cloned repo", gp.Path)
 	} else {
-		log.Error().Msgf("Failed to find the the path %v in the cloned repo. Error: %v", gp.Path, err)
+		log.Error().Msgf("Failed to find the the path %v in the cloned repo: %v", gp.Path, err)
 	}
 
 	return nil
@@ -102,7 +102,7 @@ func getRefForBranchName(r *git.Repository, branchName string) *plumbing.Referen
 		return nil
 	})
 	if err != nil {
-		log.Error().Msgf("Error going through git refs. Error: %v", err)
+		log.Error().Msgf("Error going through git refs: %v", err)
 	}
 
 	return res

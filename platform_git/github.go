@@ -29,6 +29,8 @@ func GetGithubCode() *GithubCode {
 
 func (c *GithubCode) GetOrganization(organizationName string) (*Organization, error) {
 
+	log.Info().Msgf("GetOrganization - Search for %s", organizationName)
+
 	org, resp, err := c.GithubClient.Organizations.Get(ctx, organizationName)
 
 	err = validateApiResponse(resp, err, "Error trying to get organization")
@@ -36,20 +38,26 @@ func (c *GithubCode) GetOrganization(organizationName string) (*Organization, er
 		return nil, err
 	}
 
+	log.Info().Msg("Organization found")
+
 	return &Organization{
 		Name:    org.Name,
 		Company: org.Company,
 	}, nil
 }
 
-func (c *GithubCode) GetRepository(name string) (*Repository, error) {
+func (c *GithubCode) GetRepository(repoName string) (*Repository, error) {
 
-	repo, resp, err := c.GithubClient.Repositories.Get(ctx, *c.githubUser.Login, name)
+	log.Info().Msgf("GetRepository - Search for %s", repoName)
+
+	repo, resp, err := c.GithubClient.Repositories.Get(ctx, *c.githubUser.Login, repoName)
 
 	err = validateApiResponse(resp, err, "Error trying to get repository")
 	if err != nil {
 		return nil, err
 	}
+
+	log.Info().Msg("Repo found")
 
 	return &Repository{
 		Name:         repo.Name,
@@ -60,6 +68,8 @@ func (c *GithubCode) GetRepository(name string) (*Repository, error) {
 }
 
 func (c *GithubCode) CreateRepository(repoName string, branch string) (*Repository, error) {
+
+	log.Info().Msgf("CreateRepository - Create the repo %s", repoName)
 
 	newRepo := &github.Repository{
 		Name:        &repoName,
@@ -75,7 +85,7 @@ func (c *GithubCode) CreateRepository(repoName string, branch string) (*Reposito
 		return nil, err
 	}
 
-	log.Info().Msgf("Created the repo successfully! Created on (timestamp): %v", repo.CreatedAt)
+	log.Info().Msgf("Created the repo. Created on (timestamp): %v", repo.CreatedAt)
 
 	emptyCommit := &github.RepositoryContentFileOptions{
 		Message: github.String("Initial commit"),
@@ -86,7 +96,7 @@ func (c *GithubCode) CreateRepository(repoName string, branch string) (*Reposito
 
 	_, _, err = c.GithubClient.Repositories.CreateFile(ctx, login, repoName, "README.md", emptyCommit)
 	if err != nil {
-		log.Error().Msgf("Error creating a file for the empty commit. Error: %v", err)
+		log.Error().Msgf("Error creating a file for the empty commit: %v", err)
 		return nil, err
 	}
 

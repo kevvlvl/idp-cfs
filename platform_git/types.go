@@ -7,13 +7,14 @@ import (
 
 type Git interface {
 	GetOrganization(organizationName string) (*Organization, error)
-	GetRepository(name string) (*Repository, error)
+	GetRepository(repoName string) (*Repository, error)
 	CreateRepository(repoName string, branch string) (*Repository, error)
 }
 
 type GitCode struct {
-	githubCode *GithubCode
-	Repository *Repository
+	githubCode   *GithubCode
+	Repository   *Repository
+	Organization *Organization
 }
 
 type GithubCode struct {

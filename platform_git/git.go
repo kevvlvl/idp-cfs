@@ -69,16 +69,20 @@ func (c *GitCode) CreateRepository(repoName string, branch string) (*Repository,
 
 func (c *GitCode) PushFiles(url string, branch string, relativePath string) error {
 
-	// FIXME refactor all the disgusting error handling.
-
 	branchRef := fmt.Sprintf("refs/heads/%s", branch)
 	gpPath := platform_gp.GetCheckoutPath()
-	err := deleteCodePath()
+	codePath := getCodePath()
 
-	// FIXME refactor error handling
-	os.Mkdir(getCodePath(), 0775)
+	err := deleteCodePath()
 	if err != nil {
-		log.Error().Msgf("Failed to cleanup the code path. Error: %v", err)
+		log.Error().Msgf("Failed to cleanup the code path: %v", err)
+		return err
+	}
+
+	err = os.Mkdir(codePath, 0775)
+	if err != nil {
+		log.Error().Msgf("Failed to create the directory for %s: %v", codePath, err)
+		return err
 	}
 
 	var pat = ""
@@ -89,7 +93,7 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 		user = os.Getenv("CFS_GITHUB_USER")
 	}
 
-	r, err := git.PlainClone(getCodePath(), false, &git.CloneOptions{
+	r, err := git.PlainClone(codePath, false, &git.CloneOptions{
 		URL: url,
 		Auth: &http.BasicAuth{
 			Username: user,
@@ -100,19 +104,19 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 	})
 
 	if err != nil && err.Error() != "remote repository is empty" {
-		log.Error().Msgf("Failed to clone the repo. Error: %v", err)
+		log.Error().Msgf("Failed to clone the repo: %v", err)
 		return err
 	}
 
 	_, err = r.Head()
 	if err != nil {
-		log.Error().Msgf("Failed to return HEAD. Error: %v", err)
+		log.Error().Msgf("Failed to return HEAD: %v", err)
 		return err
 	}
 
 	w, err := r.Worktree()
 	if err != nil {
-		log.Error().Msgf("Failed to return worktree. Error: %v", err)
+		log.Error().Msgf("Failed to return worktree: %v", err)
 		return err
 	}
 
@@ -121,42 +125,58 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 	})
 
 	if err != nil {
-		log.Error().Msgf("Failed to checkout on a new branch. Error: %v", err)
+		log.Error().Msgf("Failed to checkout on a new branch: %v", err)
 		return err
 	}
 
-	absolutePath := path.Join(gpPath, relativePath)
+	err = os.Chdir(codePath)
+	if err != nil {
+		log.Error().Msgf("Failed to change directory into %s: %v", codePath, err)
+		return err
+	}
 
-	err = filepath.Walk(absolutePath, func(file string, info os.FileInfo, err error) error {
+	err = filepath.Walk(path.Join(gpPath, relativePath), func(file string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
 			// FIXME refactor
 			srcFile, _ := os.Open(file)
-			defer srcFile.Close()
+			defer func(srcFile *os.File) {
+				err := srcFile.Close()
+				if err != nil {
+					log.Error().Msgf("Failed to close the src file %s: %v", srcFile.Name(), err)
+				}
+			}(srcFile)
 
 			destFilePath := filepath.Join(getCodePath(), info.Name())
 			destFile, _ := os.Create(destFilePath)
-			defer destFile.Close()
+			defer func(destFile *os.File) {
+				err := destFile.Close()
+				if err != nil {
+					log.Error().Msgf("Failed to close the src file %s: %v", srcFile.Name(), err)
+				}
+			}(destFile)
 
 			_, err := io.Copy(destFile, srcFile)
 			if err != nil {
-				log.Error().Msgf("Failed to copy the file from gp path to the new code path. Error: %v", err)
+				log.Error().Msgf("Failed to copy the file from gp path to the new code path: %v", err)
+				return err
 			}
 
-			// FIXME refactor - make sure working dir is code path!
 			_, err = w.Add(info.Name())
 			if err != nil {
-				log.Error().Msgf("Failed to add file %s to commit. Error: %v", file, err)
+				log.Error().Msgf("Failed to add file %s to commit: %v", file, err)
+				return err
 			}
 		}
 		return nil
 	})
 	if err != nil {
-		log.Error().Msgf("Failed to walk the directory %s. Error: %v", gpPath, err)
+		log.Error().Msgf("Failed to walk the directory %s: %v", gpPath, err)
+		return err
 	}
 
 	_, err = w.Status()
 	if err != nil {
-		log.Error().Msgf("Failed to get status. Error: %v", err)
+		log.Error().Msgf("Failed to get status: %v", err)
 		return err
 	}
 
@@ -170,17 +190,16 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 	})
 
 	if err != nil {
-		log.Error().Msgf("Failed to commit. Error: %v", err)
+		log.Error().Msgf("Failed to commit: %v", err)
 		return err
 	}
 
 	log.Info().Msgf("Files Commit. %v", commit)
 
-	// FIXME refactor Refspec
 	err = r.Push(&git.PushOptions{
 		RemoteName: "origin",
 		RefSpecs: []config.RefSpec{
-			config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", branch, branch)),
+			config.RefSpec(fmt.Sprintf("%s:%s", branchRef, branchRef)),
 		},
 		Auth: &http.BasicAuth{
 			Username: user,
@@ -188,10 +207,11 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 		},
 	})
 	if err != nil {
-		log.Error().Msgf("Failed for push commit changes. Error: %v", err)
+		log.Error().Msgf("Failed for push commit changes: %v", err)
+		return err
 	}
 
-	return errors.New("not implemented yet")
+	return nil
 }
 
 func getCodePath() string {
