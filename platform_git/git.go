@@ -180,11 +180,10 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 		return err
 	}
 
-	// FIXME refactor parameters. externalize author into app config
 	commit, err := w.Commit("Adding GP as per idp-cfs contract", &git.CommitOptions{
 		Author: &object.Signature{
-			Name:  "idp-cfs",
-			Email: "idp-cfs@kevvlvl.github.noreply.com",
+			Name:  GitCommitAuthor,
+			Email: GitCommitAuthorEmail,
 			When:  time.Now(),
 		},
 	})

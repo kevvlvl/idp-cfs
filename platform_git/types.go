@@ -41,6 +41,10 @@ const (
 	CodeGitlab = "gitlab"
 	// CodeGitea for the code repository of type Gitea
 	CodeGitea = "gitea"
+	// GitCommitAuthor is the author of the git commit
+	GitCommitAuthor = "idp-cfs"
+	// GitCommitAuthorEmail is the email of the git commit's author
+	GitCommitAuthorEmail = "idp-cfs@kevvlvl.github.noreply.com"
 )
 
 var GithubPrivateRepository = flag.Bool("private", false, "Will created repo be private.")

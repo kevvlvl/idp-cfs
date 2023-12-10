@@ -1,24 +1,21 @@
 package main
 
 import (
+	"flag"
 	"github.com/rs/zerolog/log"
 	"idp-cfs/contract"
 )
 
 func main() {
 
-	/*-----------------------------------
-	TODO parameters of CLI:
-	- contract file (string path)
-	- dryRunMode (bool)
-	-----------------------------------*/
-	dryRunMode := false
-	contractFile := "platform-order.yaml"
+	dryRunMode := flag.Bool("dryRunMode", true, "Enable or Disable dryrun Mode")
+	contractFile := flag.String("contractFile", "platform-order.yaml", "Path to the contract file (in YAML format)")
+	flag.Parse()
 
-	proc, err := contract.GetProcessor(contractFile)
+	proc, err := contract.GetProcessor(*contractFile)
 
 	if err == nil && proc != nil {
-		dryRunResult, err := proc.Execute(dryRunMode)
+		dryRunResult, err := proc.Execute(*dryRunMode)
 
 		if err != nil {
 			log.Error().Msgf("Error trying to execute: %v", err)
