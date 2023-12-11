@@ -89,8 +89,8 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 	var user = ""
 
 	if c.githubCode != nil {
-		pat = os.Getenv("CFS_GITHUB_PAT")
-		user = os.Getenv("CFS_GITHUB_USER")
+		pat = GetPersonalAccessToken()
+		user = GetUsername()
 	}
 
 	r, err := git.PlainClone(codePath, false, &git.CloneOptions{

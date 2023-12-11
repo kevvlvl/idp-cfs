@@ -9,10 +9,17 @@ import (
 
 var ctx = context.Background()
 
+func GetUsername() string {
+	return os.Getenv("CFS_GITHUB_USER")
+}
+
+func GetPersonalAccessToken() string {
+	return os.Getenv("CFS_GITHUB_PAT")
+}
+
 func GetGithubCode() *GithubCode {
 
-	pat := os.Getenv("CFS_GITHUB_PAT")
-	client := github.NewClient(nil).WithAuthToken(pat)
+	client := github.NewClient(nil).WithAuthToken(GetPersonalAccessToken())
 
 	user, resp, err := client.Users.Get(ctx, "")
 
