@@ -11,7 +11,7 @@ import (
 
 func GetProcessor(contractFile string, gpCheckoutPath string, codeClonePath string) (*Processor, error) {
 
-	c, err := Load(contractFile)
+	c, err := Load(&ActualFileReader{}, contractFile)
 
 	if err != nil {
 		log.Error().Msgf("Error loading contract: %v", err)

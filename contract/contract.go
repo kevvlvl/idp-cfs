@@ -9,10 +9,10 @@ import (
 )
 
 // Load unmarshalls the YAML contract file into a struct
-func Load(filePath string) (*Contract, error) {
+func Load(fr FileReader, filePath string) (*Contract, error) {
 
 	c := &Contract{}
-	buf, err := os.ReadFile(filePath)
+	buf, err := fr.ReadFile(filePath)
 
 	if err != nil {
 
@@ -23,6 +23,10 @@ func Load(filePath string) (*Contract, error) {
 	}
 
 	err = yaml.Unmarshal(buf, c)
+
+	if err != nil {
+		log.Error().Msgf("Failed to unmarshal buffer: %v", err)
+	}
 
 	valid := validate(c)
 
@@ -94,4 +98,8 @@ func validate(contract *Contract) bool {
 	log.Info().Msgf("Valid Contract Deployment: %v", validDeployment)
 
 	return validAction && validCode && validCodeValues && validGpValues && validDeployment
+}
+
+func (f *ActualFileReader) ReadFile(file string) ([]byte, error) {
+	return os.ReadFile(file)
 }

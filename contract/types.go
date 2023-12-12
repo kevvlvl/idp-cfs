@@ -5,6 +5,12 @@ import (
 	"idp-cfs/platform_gp"
 )
 
+type FileReader interface {
+	ReadFile(name string) ([]byte, error)
+}
+
+type ActualFileReader struct{}
+
 type Contract struct {
 	Action string `yaml:"action"`
 

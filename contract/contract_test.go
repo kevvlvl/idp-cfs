@@ -2,23 +2,56 @@ package contract
 
 import (
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 	"testing"
 )
 
+type MockFileReader struct {
+	ReadFileFunc func(filename string) ([]byte, error)
+}
+
+func (m *MockFileReader) ReadFile(file string) ([]byte, error) {
+	return m.ReadFileFunc(file)
+}
+
+func TestLoad(t *testing.T) {
+
+	validContract := validContractNewPlatform()
+	bin, _ := yaml.Marshal(validContract)
+
+	mockFileReader := &MockFileReader{
+		ReadFileFunc: func(file string) ([]byte, error) {
+			return bin, nil
+		},
+	}
+
+	c, err := Load(mockFileReader, "contract-test-file.yaml")
+
+	assert.Nil(t, err)
+	assert.NotNil(t, c)
+	assert.Equal(t, &validContract, c)
+}
+
 func TestValidateValidContract_ThenTrue(t *testing.T) {
-	assert.True(t, validate(validContractNewPlatform()))
+
+	c := validContractNewPlatform()
+	assert.True(t, validate(&c))
 }
 
 func TestValidateInvalidContactAction_ThenFalse(t *testing.T) {
-	assert.False(t, validate(invalidContractActionDeletePlatform()))
+
+	c := invalidContractActionDeletePlatform()
+	assert.False(t, validate(&c))
 }
 
 func TestValidateInvalidContactCodeTool_ThenFalse(t *testing.T) {
-	assert.False(t, validate(invalidContractCodeTool()))
+
+	c := invalidContractCodeTool()
+	assert.False(t, validate(&c))
 }
 
-func validContractNewPlatform() *Contract {
-	return &Contract{
+func validContractNewPlatform() Contract {
+	return Contract{
 		Action: "new-contract",
 		Code: struct {
 			Tool   string  `yaml:"tool"`
@@ -62,14 +95,14 @@ func validContractNewPlatform() *Contract {
 	}
 }
 
-func invalidContractActionDeletePlatform() *Contract {
+func invalidContractActionDeletePlatform() Contract {
 
 	c := validContractNewPlatform()
 	c.Action = "delete-contract"
 	return c
 }
 
-func invalidContractCodeTool() *Contract {
+func invalidContractCodeTool() Contract {
 	c := validContractNewPlatform()
 	c.Code.Tool = "SuperGitServer"
 	return c
