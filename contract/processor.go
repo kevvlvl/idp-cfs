@@ -124,6 +124,18 @@ func validateContractCodeRepo(dryRunMode bool, p *Processor, code *platform_git.
 			log.Error().Msgf("Unexpected error returned: %v", err)
 			return err
 		}
+	} else if p.Contract.Action == UpdateContract {
+
+		// expect HTTP 200 for the repo. It must exist
+		if repo != nil && err == nil {
+
+			log.Info().Msgf("Repo %s exists.", p.Contract.Code.Repo)
+
+			if !dryRunMode {
+
+				// TODO: create branch defined in the update contract. This is where we will push the gp in
+			}
+		}
 	}
 
 	return nil
