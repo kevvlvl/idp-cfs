@@ -12,9 +12,10 @@ type Git interface {
 }
 
 type GitCode struct {
-	githubCode   *GithubCode
-	Repository   *Repository
-	Organization *Organization
+	githubCode    *GithubCode
+	Repository    *Repository
+	Organization  *Organization
+	CodeClonePath string
 }
 
 type GithubCode struct {
@@ -45,6 +46,8 @@ const (
 	GitCommitAuthor = "idp-cfs"
 	// GitCommitAuthorEmail is the email of the git commit's author
 	GitCommitAuthorEmail = "idp-cfs@kevvlvl.github.noreply.com"
+	// CodeClonePath is the path where we git clone the code path to prepare pushing the golden path (when defined)
+	CodeClonePath = "/tmp/idp-cfs-code"
 )
 
 var GithubPrivateRepository = flag.Bool("private", false, "Will created repo be private.")

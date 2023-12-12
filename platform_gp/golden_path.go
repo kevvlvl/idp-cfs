@@ -11,36 +11,35 @@ import (
 	"strings"
 )
 
-func GetGoldenPath(url string, branch string, path string, tag string) GoldenPath {
-
-	// if github, set tool to github
+func GetGoldenPath(url string, branch string, path string, tag string, gpCheckoutPath string) GoldenPath {
 
 	var tool string
 
+	// if github, set tool to github
 	if strings.Contains(url, "github.com") {
 		tool = GpGithub
 	}
 
 	return GoldenPath{
-		Tool:   tool,
-		URL:    url,
-		Branch: branch,
-		Path:   path,
-		Tag:    tag,
+		Tool:           tool,
+		URL:            url,
+		Branch:         branch,
+		Path:           path,
+		Tag:            tag,
+		GpCheckoutPath: gpCheckoutPath,
 	}
 }
 
 func (gp *GoldenPath) CloneGp() error {
 
-	checkoutPath := GetCheckoutPath()
-	err := DeleteClonePathDir()
+	err := gp.DeleteClonePathDir()
 	if err != nil {
 
-		log.Error().Msgf("Error cleaning up the folder %s. Error = %v: ", checkoutPath, err)
+		log.Error().Msgf("Error cleaning up the folder %s. Error = %v: ", gp.GpCheckoutPath, err)
 		return failedCloneGpError()
 	}
 
-	r, err := git.PlainClone(checkoutPath, false, &git.CloneOptions{
+	r, err := git.PlainClone(gp.GpCheckoutPath, false, &git.CloneOptions{
 		URL:      gp.URL,
 		Progress: os.Stdout,
 	})
@@ -55,7 +54,7 @@ func (gp *GoldenPath) CloneGp() error {
 		return failedCloneGpError()
 	}
 
-	log.Info().Msgf("Cloned the golden path at %s. HEAD ref: %s", checkoutPath, headRef)
+	log.Info().Msgf("Cloned the golden path at %s. HEAD ref: %s", gp.GpCheckoutPath, headRef)
 	gp.repository = r
 
 	branchRef := getRefForBranchName(r, fmt.Sprintf("refs/remotes/origin/%s", gp.Branch))
@@ -78,13 +77,17 @@ func (gp *GoldenPath) CloneGp() error {
 		return failedCloneGpError()
 	}
 
-	if _, err := os.Stat(path.Join(checkoutPath, gp.Path)); !os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(gp.GpCheckoutPath, gp.Path)); !os.IsNotExist(err) {
 		log.Info().Msgf("Succesfully verified that path %v exists in the cloned repo", gp.Path)
 	} else {
 		log.Error().Msgf("Failed to find the the path %v in the cloned repo: %v", gp.Path, err)
 	}
 
 	return nil
+}
+
+func (gp *GoldenPath) DeleteClonePathDir() error {
+	return os.RemoveAll(gp.GpCheckoutPath)
 }
 
 // showRefsFound outputs all found Refs for the git repository in input
@@ -106,20 +109,6 @@ func getRefForBranchName(r *git.Repository, branchName string) *plumbing.Referen
 	}
 
 	return res
-}
-
-func GetCheckoutPath() string {
-	checkoutPath := os.Getenv("CFS_GP_CHECKOUT_PATH")
-
-	if checkoutPath == "" {
-		checkoutPath = "/tmp/idp-cfs-gp"
-	}
-
-	return checkoutPath
-}
-
-func DeleteClonePathDir() error {
-	return os.RemoveAll(GetCheckoutPath())
 }
 
 func failedCloneGpError() error {

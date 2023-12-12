@@ -6,9 +6,9 @@ import (
 )
 
 func TestGetCodeGitlabNotImplemented_ThenNil(t *testing.T) {
-	assert.Nil(t, GetCode("gitlab"))
+	assert.Nil(t, GetCode("gitlab", "/tmp/unit-test"))
 }
 
 func TestGetCodeGiteaNotImplemented_ThenNil(t *testing.T) {
-	assert.Nil(t, GetCode("gitea"))
+	assert.Nil(t, GetCode("gitea", "/tmp/unit-test"))
 }

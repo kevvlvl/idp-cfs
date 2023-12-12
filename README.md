@@ -10,8 +10,6 @@ First iteration of a minimal idp tool
 |:-----------------------|:--------------------------------------------------------------------------------------------|
 | CFS_GITHUB_USER        | Github Username for basic auth (in combination with the PAT. see line below)                |
 | CFS_GITHUB_PAT         | personal access token authentication to Github if using Github as code target               |
-| CFS_GP_CHECKOUT_PATH   | local directory to temporarily checkout the golden path. default = /tmp/gp                  |
-| CFS_GP_CODE_CLONE_PATH | local directory to temporarily clone the newly created code repo and to push the gp into it |
 
 ### Contract
 
@@ -29,5 +27,8 @@ go test ./...
 ### Run idp-cfs
 
 ```shell
-go run main.go --dryRunMode=true --contractFile=./platform-order.yaml
+go run main.go --dryRunMode=true \
+               --contractFile=./platform-order.yaml \
+               --gpCheckoutPath="/tmp/idp-cfs-code" \
+               --codeClonePath="/tmp/idp-cfs-gp"
 ```

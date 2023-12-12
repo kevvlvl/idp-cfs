@@ -9,7 +9,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/rs/zerolog/log"
-	"idp-cfs/platform_gp"
 	"io"
 	"os"
 	"path"
@@ -17,14 +16,17 @@ import (
 	"time"
 )
 
-func GetCode(tool string) *GitCode {
+func GetCode(tool string, codeClonePath string) *GitCode {
 
 	var code *GitCode
 
 	switch tool {
 
 	case CodeGithub:
-		code = &GitCode{githubCode: GetGithubCode()}
+		code = &GitCode{
+			githubCode:    GetGithubCode(),
+			CodeClonePath: codeClonePath,
+		}
 	case CodeGitea:
 		log.Warn().Msg("Not implemented yet!")
 	case CodeGitlab:
@@ -67,21 +69,19 @@ func (c *GitCode) CreateRepository(repoName string, branch string) (*Repository,
 	}
 }
 
-func (c *GitCode) PushFiles(url string, branch string, relativePath string) error {
+func (c *GitCode) PushFiles(url string, branch string, relativePath string, gpCheckoutPath string) error {
 
 	branchRef := fmt.Sprintf("refs/heads/%s", branch)
-	gpPath := platform_gp.GetCheckoutPath()
-	codePath := getCodePath()
 
-	err := deleteCodePath()
+	err := c.DeleteCodePath()
 	if err != nil {
 		log.Error().Msgf("Failed to cleanup the code path: %v", err)
 		return err
 	}
 
-	err = os.Mkdir(codePath, 0775)
+	err = os.Mkdir(c.CodeClonePath, 0775)
 	if err != nil {
-		log.Error().Msgf("Failed to create the directory for %s: %v", codePath, err)
+		log.Error().Msgf("Failed to create the directory for %s: %v", c.CodeClonePath, err)
 		return err
 	}
 
@@ -93,7 +93,7 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 		user = GetUsername()
 	}
 
-	r, err := git.PlainClone(codePath, false, &git.CloneOptions{
+	r, err := git.PlainClone(c.CodeClonePath, false, &git.CloneOptions{
 		URL: url,
 		Auth: &http.BasicAuth{
 			Username: user,
@@ -129,15 +129,15 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 		return err
 	}
 
-	err = os.Chdir(codePath)
+	err = os.Chdir(c.CodeClonePath)
 	if err != nil {
-		log.Error().Msgf("Failed to change directory into %s: %v", codePath, err)
+		log.Error().Msgf("Failed to change directory into %s: %v", c.CodeClonePath, err)
 		return err
 	}
 
-	err = filepath.Walk(path.Join(gpPath, relativePath), func(file string, info os.FileInfo, err error) error {
+	err = filepath.Walk(path.Join(gpCheckoutPath, relativePath), func(file string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
-			// FIXME refactor
+
 			srcFile, _ := os.Open(file)
 			defer func(srcFile *os.File) {
 				err := srcFile.Close()
@@ -146,7 +146,7 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 				}
 			}(srcFile)
 
-			destFilePath := filepath.Join(getCodePath(), info.Name())
+			destFilePath := filepath.Join(c.CodeClonePath, info.Name())
 			destFile, _ := os.Create(destFilePath)
 			defer func(destFile *os.File) {
 				err := destFile.Close()
@@ -170,7 +170,7 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 		return nil
 	})
 	if err != nil {
-		log.Error().Msgf("Failed to walk the directory %s: %v", gpPath, err)
+		log.Error().Msgf("Failed to walk the directory %s: %v", gpCheckoutPath, err)
 		return err
 	}
 
@@ -213,18 +213,6 @@ func (c *GitCode) PushFiles(url string, branch string, relativePath string) erro
 	return nil
 }
 
-func getCodePath() string {
-
-	checkoutPath := os.Getenv("CFS_GP_CODE_CLONE_PATH")
-
-	if checkoutPath == "" {
-		checkoutPath = "/tmp/idp-cfs-code"
-	}
-
-	return checkoutPath
-
-}
-
-func deleteCodePath() error {
-	return os.RemoveAll(getCodePath())
+func (c *GitCode) DeleteCodePath() error {
+	return os.RemoveAll(c.CodeClonePath)
 }

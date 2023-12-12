@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func GetProcessor(contractFile string) (*Processor, error) {
+func GetProcessor(contractFile string, gpCheckoutPath string, codeClonePath string) (*Processor, error) {
 
 	c, err := Load(contractFile)
 
@@ -23,11 +23,11 @@ func GetProcessor(contractFile string) (*Processor, error) {
 		tag = *c.GoldenPath.Tag
 	}
 
-	gp := platform_gp.GetGoldenPath(*c.GoldenPath.Url, *c.GoldenPath.Branch, *c.GoldenPath.Path, tag)
+	gp := platform_gp.GetGoldenPath(*c.GoldenPath.Url, *c.GoldenPath.Branch, *c.GoldenPath.Path, tag, gpCheckoutPath)
 
 	return &Processor{
 		Contract:   c,
-		GitCode:    platform_git.GetCode(c.Code.Tool),
+		GitCode:    platform_git.GetCode(c.Code.Tool, codeClonePath),
 		GoldenPath: &gp,
 	}, nil
 }
@@ -36,20 +36,18 @@ func GetProcessor(contractFile string) (*Processor, error) {
 func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 
 	// Contract Code section
-
-	code := platform_git.GetCode(p.Contract.Code.Tool)
-	if code == nil {
+	if p.GitCode == nil {
 		log.Error().Msg("Failed to obtain Git client for Code section.")
 		return IdpStatusFailure, errors.New("did not obtain Git client for Code section")
 	}
 
-	err := validateContractCodeOrganization(p, code)
+	err := validateContractCodeOrganization(p, p.GitCode)
 	if err != nil {
 		log.Error().Msg("Failed to validate contract code organization")
 		return IdpStatusFailure, err
 	}
 
-	err = validateContractCodeRepo(dryRunMode, p, code)
+	err = validateContractCodeRepo(dryRunMode, p, p.GitCode)
 	if err != nil {
 		log.Error().Msg("Failed to validate contract code repo")
 		return IdpStatusFailure, err
@@ -156,7 +154,7 @@ func validateGoldenPath(dryRunMode bool, p *Processor) error {
 			log.Info().Msg("Dry-Run mode enabled. Delete the golden path repo we just cloned.")
 			// Delete the cloned repo if in dry-run. Otherwise, keep it to push this in the new code git repo
 
-			err := platform_gp.DeleteClonePathDir()
+			err := p.GoldenPath.DeleteClonePathDir()
 			if err != nil {
 				log.Error().Msgf("failed to delete the clone path: %v", err)
 				return err
@@ -164,7 +162,7 @@ func validateGoldenPath(dryRunMode bool, p *Processor) error {
 		} else {
 
 			// Push Golden Path into new or updated Repo
-			err := p.GitCode.PushFiles(*p.GitCode.Repository.URL, p.Contract.Code.Branch, p.GoldenPath.Path)
+			err := p.GitCode.PushFiles(*p.GitCode.Repository.URL, p.Contract.Code.Branch, p.GoldenPath.Path, p.GoldenPath.GpCheckoutPath)
 			if err != nil {
 				log.Error().Msgf("Failed to push files to the code repo: %v", err)
 				return err
