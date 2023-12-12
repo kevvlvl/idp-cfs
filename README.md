@@ -13,6 +13,12 @@ First iteration of a minimal idp tool
 | CFS_GP_CHECKOUT_PATH   | local directory to temporarily checkout the golden path. default = /tmp/gp                  |
 | CFS_GP_CODE_CLONE_PATH | local directory to temporarily clone the newly created code repo and to push the gp into it |
 
+### Run tests
+
+```shell
+go test ./...
+```
+
 ### Run idp-cfs
 
 ```shell
