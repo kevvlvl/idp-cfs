@@ -41,6 +41,7 @@ func Load(filePath string) (*Contract, error) {
 func validate(contract *Contract) bool {
 
 	var (
+		validAction       = false
 		validCode         = false
 		validCodeValues   = false
 		validGpValuesOmit = false
@@ -50,6 +51,10 @@ func validate(contract *Contract) bool {
 	)
 
 	if contract != nil {
+
+		if contract.Action == NewContract || contract.Action == UpdateContract {
+			validAction = true
+		}
 
 		// Validate Code section
 		for _, v := range codeTools {
@@ -83,9 +88,10 @@ func validate(contract *Contract) bool {
 			contract.Deployment.Kubernetes.Namespace != ""
 	}
 
+	log.Info().Msgf("Valid Contract Action: %v", validAction)
 	log.Info().Msgf("Valid Contract Code Git Tool: %v - Values: %v", validCode, validCodeValues)
 	log.Info().Msgf("Valid Contract Golden-Path: %v", validGpValues)
 	log.Info().Msgf("Valid Contract Deployment: %v", validDeployment)
 
-	return validCode && validCodeValues && validGpValues && validDeployment
+	return validAction && validCode && validCodeValues && validGpValues && validDeployment
 }
