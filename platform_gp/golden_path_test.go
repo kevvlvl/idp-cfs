@@ -2,8 +2,28 @@ package platform_gp
 
 import (
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
+
+func TestDeleteClonePathDir_ValidPath_NoErrors(t *testing.T) {
+
+	testCheckoutPath := "/tmp/idp-cfs-gp-unit-test"
+
+	gp := GoldenPath{
+		GpCheckoutPath: testCheckoutPath,
+	}
+
+	f, err := os.Create(testCheckoutPath)
+	if err != nil {
+		t.Fatalf("Failed to create directory for unit test: %v", err)
+	}
+
+	t.Logf("Created temp folder %s for unit test", f.Name())
+
+	err = gp.DeleteClonePathDir()
+	assert.Nil(t, err)
+}
 
 func TestGetGoldenPathValidUrl(t *testing.T) {
 

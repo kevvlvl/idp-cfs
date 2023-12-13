@@ -5,6 +5,7 @@ import (
 	"idp-cfs/platform_gp"
 )
 
+// FileReader is a wrapper interface to make os.ReadFile testable
 type FileReader interface {
 	ReadFile(name string) ([]byte, error)
 }

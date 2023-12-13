@@ -14,7 +14,7 @@ func (m *MockFileReader) ReadFile(file string) ([]byte, error) {
 	return m.ReadFileFunc(file)
 }
 
-func TestLoad(t *testing.T) {
+func TestLoadValidContract_NoErrors(t *testing.T) {
 
 	validContract := validContractNewPlatform()
 	bin, _ := yaml.Marshal(validContract)
@@ -30,6 +30,24 @@ func TestLoad(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, c)
 	assert.Equal(t, &validContract, c)
+}
+
+func TestLoadInvalidContract_MissingRequiredField_Error(t *testing.T) {
+
+	invalidContract := invalidContractEmptyTool()
+	bin, _ := yaml.Marshal(invalidContract)
+
+	mockFileReader := &MockFileReader{
+		ReadFileFunc: func(file string) ([]byte, error) {
+			return bin, nil
+		},
+	}
+
+	c, err := Load(mockFileReader, "contract-test-file.yaml")
+
+	assert.Nil(t, c)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "the contract metadata is not valid")
 }
 
 func TestValidateValidContract_ThenTrue(t *testing.T) {
@@ -105,6 +123,12 @@ func invalidContractActionDeletePlatform() Contract {
 func invalidContractCodeTool() Contract {
 	c := validContractNewPlatform()
 	c.Code.Tool = "SuperGitServer"
+	return c
+}
+
+func invalidContractEmptyTool() Contract {
+	c := validContractNewPlatform()
+	c.Code.Tool = ""
 	return c
 }
 
