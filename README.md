@@ -21,7 +21,7 @@ See _./docs/contract-examples_ for examples of valid platform requests from idp-
 ### Run tests
 
 ```shell
-go test ./...
+go test -cover ./...
 ```
 
 ### Run idp-cfs
