@@ -6,10 +6,10 @@ First iteration of a minimal idp tool
 
 ### Define the following env vars:
 
-| Env Var                | Purpose                                                                                     |
-|:-----------------------|:--------------------------------------------------------------------------------------------|
-| CFS_GITHUB_USER        | Github Username for basic auth (in combination with the PAT. see line below)                |
-| CFS_GITHUB_PAT         | personal access token authentication to Github if using Github as code target               |
+| Env Var           | Purpose                                                                                              |
+|:------------------|:-----------------------------------------------------------------------------------------------------|
+| CFS_CODE_GIT_USER | Git Username using basic auth (in combination with the PAT. see line below)                          |
+| CFS_CODE_GIT_PAT  | personal access token using basic auth                                                               |
 
 ### Contract
 
@@ -28,7 +28,7 @@ go test -cover ./...
 
 ```shell
 go run main.go --dryRunMode=true \
-               --contractFile=./platform-order.yaml \
-               --gpCheckoutPath="/tmp/idp-cfs-code" \
+               --contractFile=./_docs/contract-examples/platform-order.yaml \
+               --gpClonePath="/tmp/idp-cfs-code" \
                --codeClonePath="/tmp/idp-cfs-gp"
 ```

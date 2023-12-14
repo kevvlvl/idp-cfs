@@ -100,6 +100,6 @@ func validate(contract *Contract) bool {
 	return validAction && validCode && validCodeValues && validGpValues && validDeployment
 }
 
-func (f *ActualFileReader) ReadFile(file string) ([]byte, error) {
+func (f *CfsFileReader) ReadFile(file string) ([]byte, error) {
 	return os.ReadFile(file)
 }
