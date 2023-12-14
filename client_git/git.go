@@ -9,7 +9,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/rs/zerolog/log"
 	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -125,18 +124,9 @@ func (g *GitClient) PushFiles(repo *git.Repository, localDir string, auth *GitBa
 		return err
 	}
 
-	err = filepath.Walk(localDir, func(file string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
-			_, err = w.Add(info.Name())
-			if err != nil {
-				log.Error().Msgf("Failed to add file %s to commit: %v", file, err)
-				return err
-			}
-		}
-		return nil
-	})
+	err = w.AddGlob(".")
 	if err != nil {
-		log.Error().Msgf("Failed to walk the directory %s: %v", localDir, err)
+		log.Error().Msgf("Failed to add . to git: %v", err)
 		return err
 	}
 
