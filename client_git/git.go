@@ -60,7 +60,7 @@ func (g *GitClient) CloneRepository(path string, gitUrl string, branch *string, 
 		return nil, err
 	}
 
-	headRef, err := r.Head()
+	headRef, err := g.Head(r)
 	if err != nil {
 		log.Error().Msgf("Unable to return reference of HEAD: %v", err)
 		return nil, err
@@ -69,17 +69,17 @@ func (g *GitClient) CloneRepository(path string, gitUrl string, branch *string, 
 	if branch != nil {
 		log.Info().Msgf("Cloned the git repo at %s. HEAD ref: %s", path, headRef)
 
-		branchRef := getRefForBranchName(r, branchRefStr)
+		branchRef := g.getRefForBranch(r, branchRefStr)
 
 		log.Info().Msgf("Found branch with ref %+v", branchRef)
 
-		worktree, err := r.Worktree()
+		w, err := g.WorkTree(r)
 		if err != nil {
 			log.Error().Msgf("Error trying to get worktree for repository: %v", err)
 			return nil, err
 		}
 
-		err = worktree.Checkout(&git.CheckoutOptions{
+		err = g.Checkout(w, &git.CheckoutOptions{
 			Branch: branchRef.Name(),
 			Create: false,
 		})
@@ -93,19 +93,15 @@ func (g *GitClient) CloneRepository(path string, gitUrl string, branch *string, 
 	return r, nil
 }
 
-func (g *GitClient) PlainClone(path string, isBare bool, o *git.CloneOptions) (*git.Repository, error) {
-	return git.PlainClone(path, false, o)
-}
-
 func (g *GitClient) PushFiles(repo *git.Repository, localDir string, auth *GitBasicAuth) error {
 
-	_, err := repo.Head()
+	_, err := g.Head(repo)
 	if err != nil {
 		log.Error().Msgf("Failed to return HEAD: %v", err)
 		return err
 	}
 
-	w, err := repo.Worktree()
+	w, err := g.WorkTree(repo)
 	if err != nil {
 		log.Error().Msgf("Failed to return worktree: %v", err)
 		return err
@@ -117,20 +113,20 @@ func (g *GitClient) PushFiles(repo *git.Repository, localDir string, auth *GitBa
 		return err
 	}
 
-	err = w.AddGlob(".")
+	err = g.AddGlob(w, ".")
 	if err != nil {
 		log.Error().Msgf("Failed to add . to git: %v", err)
 		return err
 	}
 
-	_, err = w.Status()
+	_, err = g.Status(w)
 	if err != nil {
 		log.Error().Msgf("Failed to get status: %v", err)
 		return err
 	}
 
 	// FIXME refactor parameters. externalize author into app config
-	commit, err := w.Commit("Adding GP as per idp-cfs contract", &git.CommitOptions{
+	commit, err := g.Commit(w, "Adding GP as per idp-cfs contract", &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "idp-cfs",
 			Email: "idp-cfs@kevvlvl.github.noreply.com",
@@ -145,7 +141,7 @@ func (g *GitClient) PushFiles(repo *git.Repository, localDir string, auth *GitBa
 
 	log.Info().Msgf("Files Commit. %v", commit)
 
-	err = repo.Push(&git.PushOptions{
+	err = g.Push(repo, &git.PushOptions{
 		Auth: &http.BasicAuth{
 			Username: auth.user,
 			Password: auth.token,
@@ -173,7 +169,7 @@ func GetAuth(user string, token string) *GitBasicAuth {
 	}
 }
 
-func getRefForBranchName(r *git.Repository, branchName string) *plumbing.Reference {
+func (g *GitClient) getRefForBranch(r *git.Repository, branchName string) *plumbing.Reference {
 	var res *plumbing.Reference
 
 	refs, _ := r.References()
@@ -191,4 +187,36 @@ func getRefForBranchName(r *git.Repository, branchName string) *plumbing.Referen
 	}
 
 	return res
+}
+
+func (g *GitClient) PlainClone(path string, isBare bool, o *git.CloneOptions) (*git.Repository, error) {
+	return git.PlainClone(path, false, o)
+}
+
+func (g *GitClient) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
+	return w.Checkout(opts)
+}
+
+func (g *GitClient) Head(r *git.Repository) (*plumbing.Reference, error) {
+	return r.Head()
+}
+
+func (g *GitClient) WorkTree(r *git.Repository) (*git.Worktree, error) {
+	return r.Worktree()
+}
+
+func (g *GitClient) Status(w *git.Worktree) (git.Status, error) {
+	return w.Status()
+}
+
+func (g *GitClient) AddGlob(w *git.Worktree, glob string) error {
+	return w.AddGlob(glob)
+}
+
+func (g *GitClient) Commit(w *git.Worktree, msg string, opts *git.CommitOptions) (plumbing.Hash, error) {
+	return w.Commit(msg, opts)
+}
+
+func (g *GitClient) Push(r *git.Repository, o *git.PushOptions) error {
+	return r.Push(o)
 }
