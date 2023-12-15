@@ -1,7 +1,6 @@
 package client_github
 
 import (
-	"flag"
 	"github.com/google/go-github/v56/github"
 )
 
@@ -26,9 +25,3 @@ type Repository struct {
 	Owner        *string
 	URL          *string
 }
-
-var (
-	GithubPrivateRepository = flag.Bool("private", false, "Will created repo be private.")
-	GithubDescription       = flag.String("description", "", "Created by idp-cfs")
-	GithubAutoInit          = flag.Bool("auto-init", false, "Pass true to create an initial commit with empty README.")
-)

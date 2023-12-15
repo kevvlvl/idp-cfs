@@ -42,11 +42,17 @@ func GetProcessor(contractFile string, gpClonePath string, codeClonePath string)
 // Execute allows you to run the idp either in dryRun mode, or in real life (dryRun = false)
 func (p *Processor) Execute(dryRunMode bool) (IdpStatus, error) {
 
-	// Contract Code section
-	if p.GitClient == nil {
-		log.Error().Msg("Failed to obtain Git client for Code section.")
-		return IdpStatusFailure, errors.New("did not obtain Git client for Code section")
+	if _, err := os.Stat(p.GpClonePath); !os.IsNotExist(err) {
+		log.Error().Msgf("Path %s exists. Please delete or change path to a non-existing directory!", p.GpClonePath)
+		return IdpStatusFailure, err
 	}
+
+	if _, err := os.Stat(p.CodeClonePath); !os.IsNotExist(err) {
+		log.Error().Msgf("Path %s exists. Please delete or change path to a non-existing directory!", p.CodeClonePath)
+		return IdpStatusFailure, err
+	}
+
+	// Contract Code section
 
 	err := p.validateContractCodeOrganization()
 	if err != nil {
@@ -161,8 +167,7 @@ func (p *Processor) validateGoldenPath(dryRunMode bool) error {
 
 			log.Info().Msg("Dry-Run mode enabled. Delete the golden path repo we just cloned.")
 			// Delete the cloned repo if in dry-run. Otherwise, keep it to push this in the new code git repo
-
-			err := util.RemoveAllDir(p.GpClonePath)
+			err := os.RemoveAll(p.GpClonePath)
 			if err != nil {
 				log.Error().Msgf("failed to delete the clone path: %v", err)
 				return err

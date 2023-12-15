@@ -1,13 +1,13 @@
 package client_git
 
 import (
-	"errors"
 	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/rs/zerolog/log"
+	"idp-cfs/util"
 	"os"
 	"time"
 )
@@ -18,19 +18,12 @@ func GetGitClient() *GitClient {
 
 func (g *GitClient) CloneRepository(path string, gitUrl string, branch *string, auth *GitBasicAuth) (*git.Repository, error) {
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.Mkdir(path, 0755)
-		if err != nil {
-			log.Error().Msgf("Failed to create directory: %v", err)
-			return nil, err
-		}
-	} else {
-		log.Error().Msg("directory exists! Please make sure the dir does not exist")
-		return nil, errors.New("directory exists! Please make sure the dir does not exist")
+	err := util.CreateFolder(path)
+	if err != nil {
+		return nil, err
 	}
 
 	var r *git.Repository
-	var err error
 	branchRefStr := fmt.Sprintf("refs/heads/%s", *branch)
 
 	if auth != nil {

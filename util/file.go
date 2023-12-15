@@ -1,15 +1,29 @@
 package util
 
 import (
+	"errors"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
 	"path/filepath"
 )
 
-// RemoveAllDir removes the path (dir) and subdirectories and files
-func RemoveAllDir(path string) error {
-	return os.RemoveAll(path)
+// CreateFolder creates a folder if it does not exist. Returns error if the folder exists
+func CreateFolder(dir string) error {
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err := os.Mkdir(dir, 0755)
+		if err != nil {
+			log.Error().Msgf("Failed to create directory: %v", err)
+			return err
+		}
+	} else {
+		e := errors.New("directory exists! Please make sure the dir does not exist")
+		log.Error().Msg(e.Error())
+		return e
+	}
+
+	return nil
 }
 
 // CopyFilesDeep copies all files from srcDir to destDir recursively

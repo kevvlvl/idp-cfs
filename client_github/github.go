@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/go-github/v56/github"
 	"github.com/rs/zerolog/log"
+	"idp-cfs/util"
 )
 
 var ctx = context.Background()
@@ -80,9 +81,9 @@ func (g *GithubClient) CreateRepository(repo string) (*Repository, error) {
 
 	newRepo := &github.Repository{
 		Name:        &repo,
-		Private:     GithubPrivateRepository,
-		Description: GithubDescription,
-		AutoInit:    GithubAutoInit,
+		Private:     util.BoolPtr(false),
+		Description: util.StringPtr(""),
+		AutoInit:    util.BoolPtr(false),
 	}
 
 	r, resp, err := g.client.Repositories.Create(ctx, "", newRepo)
