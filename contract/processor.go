@@ -17,7 +17,6 @@ func GetProcessor(contractFile string, gpClonePath string, codeClonePath string)
 	c, err := Load(&CfsFileReader{}, contractFile)
 
 	if err != nil {
-		log.Error().Msgf("Error loading contract: %v", err)
 		return nil, err
 	}
 

@@ -2,7 +2,6 @@ package contract
 
 import (
 	"errors"
-	"fmt"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -15,24 +14,22 @@ func Load(fr FileReader, filePath string) (*Contract, error) {
 	buf, err := fr.ReadFile(filePath)
 
 	if err != nil {
-
-		errorMsg := fmt.Sprintf("error trying to read contract file: %v", err)
-
-		log.Error().Msgf(errorMsg)
-		return nil, errors.New(errorMsg)
+		log.Error().Msgf("error trying to read contract file: %v", err)
+		return nil, err
 	}
 
 	err = yaml.Unmarshal(buf, c)
 
 	if err != nil {
 		log.Error().Msgf("Failed to unmarshal buffer: %v", err)
+		return nil, err
 	}
 
 	valid := validate(c)
 
 	if !valid {
 
-		errorMsg := "the contract metadata is not valid"
+		errorMsg := "contract metadata is not valid"
 
 		log.Error().Msg(errorMsg)
 		return nil, errors.New(errorMsg)
