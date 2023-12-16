@@ -3,6 +3,9 @@ package client_git
 import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/stretchr/testify/assert"
+	"os"
+	"testing"
 )
 
 type MockGitClient struct {
@@ -51,4 +54,63 @@ func (g *MockGitClient) Commit(w *git.Worktree, msg string, opts *git.CommitOpti
 
 func (g *MockGitClient) Push(r *git.Repository, o *git.PushOptions) error {
 	return g.PushFunc(r, o)
+}
+
+func TestGitClient_CloneRepository_ValidPublicUrl_NoErrors(t *testing.T) {
+
+	g := GitClient{}
+
+	var (
+		tmpDir = "/tmp/idp-cfs-unittest"
+		url    = "https://github.com/kevvlvl/idp-cfs.git"
+		branch = "main"
+	)
+
+	repository, err := g.CloneRepository(tmpDir, url, &branch, nil)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, repository)
+
+	err = os.RemoveAll(tmpDir)
+	assert.Nil(t, err)
+}
+
+func TestGitClient_CloneRepository_InvalidPublicUrl_AuthError(t *testing.T) {
+
+	g := GitClient{}
+
+	var (
+		tmpDir = "/tmp/idp-cfs-unittest"
+		url    = "https://github.com/kevvlvl/this_repo_does_not_exist.git"
+		branch = "main"
+	)
+
+	repository, err := g.CloneRepository(tmpDir, url, &branch, nil)
+
+	assert.Nil(t, repository)
+	assert.Contains(t, err.Error(), "authentication")
+	assert.NotNil(t, err)
+
+	err = os.RemoveAll(tmpDir)
+	assert.Nil(t, err)
+}
+
+func TestGetAuth_ValidCreds_NoErrors(t *testing.T) {
+
+	user := "testUser"
+	token := "test123456"
+	s := GetAuth(user, token)
+
+	assert.NotNil(t, s)
+	assert.Equal(t, user, s.user)
+	assert.Equal(t, token, s.token)
+}
+
+func TestGetAuth_MissingCreds_Errors(t *testing.T) {
+
+	user := ""
+	token := ""
+	s := GetAuth(user, token)
+
+	assert.Nil(t, s)
 }

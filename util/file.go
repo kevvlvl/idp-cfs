@@ -30,6 +30,11 @@ func CreateFolder(dir string) error {
 func CopyFilesDeep(srcDir string, destDir string) error {
 
 	err := filepath.Walk(srcDir, func(file string, info os.FileInfo, err error) error {
+
+		if err != nil {
+			return err
+		}
+
 		if !info.IsDir() {
 			srcFile, _ := os.Open(file)
 			defer func(srcFile *os.File) {
