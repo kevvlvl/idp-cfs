@@ -2,33 +2,34 @@ package contract
 
 import (
 	"errors"
-	"fmt"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 	"os"
 )
 
 // Load unmarshalls the YAML contract file into a struct
-func Load(filePath string) (*Contract, error) {
+func Load(fr FileReader, filePath string) (*Contract, error) {
 
 	c := &Contract{}
-	buf, err := os.ReadFile(filePath)
+	buf, err := fr.ReadFile(filePath)
 
 	if err != nil {
-
-		errorMsg := fmt.Sprintf("error trying to read contract file: %v", err)
-
-		log.Error().Msgf(errorMsg)
-		return nil, errors.New(errorMsg)
+		log.Error().Msgf("error trying to read contract file: %v", err)
+		return nil, err
 	}
 
 	err = yaml.Unmarshal(buf, c)
+
+	if err != nil {
+		log.Error().Msgf("Failed to unmarshal buffer: %v", err)
+		return nil, err
+	}
 
 	valid := validate(c)
 
 	if !valid {
 
-		errorMsg := "the contract metadata is not valid"
+		errorMsg := "contract metadata is not valid"
 
 		log.Error().Msg(errorMsg)
 		return nil, errors.New(errorMsg)
@@ -41,6 +42,7 @@ func Load(filePath string) (*Contract, error) {
 func validate(contract *Contract) bool {
 
 	var (
+		validAction       = false
 		validCode         = false
 		validCodeValues   = false
 		validGpValuesOmit = false
@@ -50,6 +52,10 @@ func validate(contract *Contract) bool {
 	)
 
 	if contract != nil {
+
+		if contract.Action == NewContract || contract.Action == UpdateContract {
+			validAction = true
+		}
 
 		// Validate Code section
 		for _, v := range codeTools {
@@ -83,9 +89,14 @@ func validate(contract *Contract) bool {
 			contract.Deployment.Kubernetes.Namespace != ""
 	}
 
+	log.Info().Msgf("Valid Contract Action: %v", validAction)
 	log.Info().Msgf("Valid Contract Code Git Tool: %v - Values: %v", validCode, validCodeValues)
 	log.Info().Msgf("Valid Contract Golden-Path: %v", validGpValues)
 	log.Info().Msgf("Valid Contract Deployment: %v", validDeployment)
 
-	return validCode && validCodeValues && validGpValues && validDeployment
+	return validAction && validCode && validCodeValues && validGpValues && validDeployment
+}
+
+func (f *CfsFileReader) ReadFile(file string) ([]byte, error) {
+	return os.ReadFile(file)
 }

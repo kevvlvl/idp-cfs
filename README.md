@@ -6,9 +6,29 @@ First iteration of a minimal idp tool
 
 ### Define the following env vars:
 
-| Env Var              | Purpose                                                                                     |
-|:---------------------|:--------------------------------------------------------------------------------------------|
-| CFS_GITHUB_USER      | Github Username for basic auth (in combination with the PAT. see line below)                |
-| CFS_GITHUB_PAT       | personal access token authentication to Github if using Github as code target               |
-| CFS_GP_CHECKOUT_PATH | local directory to temporarily checkout the golden path. default = /tmp/gp                  |
-| CFS_GP_CODE_CLONE_PATH  | local directory to temporarily clone the newly created code repo and to push the gp into it |
+| Env Var           | Purpose                                                                                              |
+|:------------------|:-----------------------------------------------------------------------------------------------------|
+| CFS_CODE_GIT_USER | Git Username using basic auth (in combination with the PAT. see line below)                          |
+| CFS_CODE_GIT_PAT  | personal access token using basic auth                                                               |
+
+### Contract
+
+See _./docs/contract-examples_ for examples of valid platform requests from idp-cfs:
+
+- `new-contract` will request a new code and k8s infra
+- `update-contract` will request to update the existing code in a new branch and validate that the remainder of the platform exists to ensure no corruption
+
+### Run tests
+
+```shell
+go test -cover ./...
+```
+
+### Run idp-cfs
+
+```shell
+go run main.go --dryRunMode=true \
+               --contractFile=./_docs/contract-examples/platform-order-new.yaml \
+               --gpClonePath="/tmp/idp-cfs-code" \
+               --codeClonePath="/tmp/idp-cfs-gp"
+```

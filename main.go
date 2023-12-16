@@ -3,22 +3,16 @@ package main
 import (
 	"github.com/rs/zerolog/log"
 	"idp-cfs/contract"
+	"idp-cfs/flags"
 )
 
 func main() {
 
-	/*-----------------------------------
-	TODO parameters of CLI:
-	- contract file (string path)
-	- dryRunMode (bool)
-	-----------------------------------*/
-	dryRunMode := false
-	contractFile := "platform-order.yaml"
-
-	proc, err := contract.GetProcessor(contractFile)
+	args := flags.GetCommandArgs()
+	proc, err := contract.GetProcessor(args.ContractFile, args.GpClonePath, args.CodeClonePath)
 
 	if err == nil && proc != nil {
-		dryRunResult, err := proc.Execute(dryRunMode)
+		dryRunResult, err := proc.Execute(args.DryRunMode)
 
 		if err != nil {
 			log.Error().Msgf("Error trying to execute: %v", err)
