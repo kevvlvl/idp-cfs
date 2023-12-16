@@ -28,7 +28,7 @@ go test -cover ./...
 
 ```shell
 go run main.go --dryRunMode=true \
-               --contractFile=./_docs/contract-examples/platform-order.yaml \
+               --contractFile=./_docs/contract-examples/platform-order-new.yaml \
                --gpClonePath="/tmp/idp-cfs-code" \
                --codeClonePath="/tmp/idp-cfs-gp"
 ```
