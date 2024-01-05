@@ -31,7 +31,7 @@ func pushGoldenPath(tool, codeUrl, codeDefaultBranch, url, pathDir, branch, gpWo
 			return err
 		}
 
-		err = git.PushFiles(codeRepo, codeWorkDir, gitCodeAuth)
+		err = git.PushFiles(codeRepo, gitCodeAuth)
 		if err != nil {
 			log.Error().Msgf("Failed to push files to the code repo: %v", err)
 			return err

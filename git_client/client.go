@@ -9,7 +9,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/rs/zerolog/log"
 	"idp-cfs2/util"
-	"os"
 	"time"
 )
 
@@ -49,7 +48,7 @@ func (g *GitClient) CloneRepository(path, gitUrl string, branch string, auth *Gi
 
 	err := util.CreateFolder(path)
 	if err != nil {
-		return nil, err
+		return nil, util.LogError(fmt.Sprintf("failed to create folder at path %s: %v", path, err))
 	}
 
 	var r *git.Repository
@@ -85,14 +84,12 @@ func (g *GitClient) CloneRepository(path, gitUrl string, branch string, auth *Gi
 	}
 
 	if err != nil {
-		log.Error().Msgf("Failed to clone the repo: %v", err)
-		return nil, err
+		return nil, util.LogError(fmt.Sprintf("failed to clone repo: %v", err))
 	}
 
 	headRef, err := g.headFunc(r)
 	if err != nil {
-		log.Error().Msgf("Unable to return reference of HEAD: %v", err)
-		return nil, err
+		return nil, util.LogError(fmt.Sprintf("failed to return HEAD reference: %v", err))
 	}
 
 	log.Info().Msgf("Cloned the git repo at %s. HEAD ref: %s", path, headRef)
@@ -103,8 +100,7 @@ func (g *GitClient) CloneRepository(path, gitUrl string, branch string, auth *Gi
 
 	w, err := g.workTreeFunc(r)
 	if err != nil {
-		log.Error().Msgf("Error trying to get worktree for repository: %v", err)
-		return nil, err
+		return nil, util.LogError(fmt.Sprintf("failed to get worktree for repo: %v", err))
 	}
 
 	err = g.checkoutFunc(w, &git.CheckoutOptions{
@@ -113,43 +109,32 @@ func (g *GitClient) CloneRepository(path, gitUrl string, branch string, auth *Gi
 	})
 
 	if err != nil {
-		log.Error().Msgf("Error trying to checkout the branch: %v", err)
-		return nil, err
+		return nil, util.LogError(fmt.Sprintf("failed to checkout branch: %v", err))
 	}
 
 	return r, nil
 }
 
-func (g *GitClient) PushFiles(repo *git.Repository, localDir string, auth *GitClientAuth) error {
+func (g *GitClient) PushFiles(repo *git.Repository, auth *GitClientAuth) error {
 
 	_, err := g.headFunc(repo)
 	if err != nil {
-		log.Error().Msgf("Failed to return HEAD: %v", err)
-		return err
+		return util.LogError(fmt.Sprintf("failed to return HEAD: %v", err))
 	}
 
 	w, err := g.workTreeFunc(repo)
 	if err != nil {
-		log.Error().Msgf("Failed to return worktree: %v", err)
-		return err
-	}
-
-	err = os.Chdir(localDir)
-	if err != nil {
-		log.Error().Msgf("Failed to change directory into %s: %v", localDir, err)
-		return err
+		return util.LogError(fmt.Sprintf("failed to return worktree: %v", err))
 	}
 
 	err = g.addGlobFunc(w, ".")
 	if err != nil {
-		log.Error().Msgf("Failed to add . to git: %v", err)
-		return err
+		return util.LogError(fmt.Sprintf("failed to add . to git: %v", err))
 	}
 
 	_, err = g.statusFunc(w)
 	if err != nil {
-		log.Error().Msgf("Failed to get status: %v", err)
-		return err
+		return util.LogError(fmt.Sprintf("failed to get status: %v", err))
 	}
 
 	commit, err := g.commitFunc(w, "Adding GP as per idp-cfs contract", &git.CommitOptions{
@@ -161,8 +146,7 @@ func (g *GitClient) PushFiles(repo *git.Repository, localDir string, auth *GitCl
 	})
 
 	if err != nil {
-		log.Error().Msgf("Failed to commit: %v", err)
-		return err
+		return util.LogError(fmt.Sprintf("failed to commit: %v", err))
 	}
 
 	log.Info().Msgf("Files Commit. %v", commit)
@@ -174,8 +158,7 @@ func (g *GitClient) PushFiles(repo *git.Repository, localDir string, auth *GitCl
 		},
 	})
 	if err != nil {
-		log.Error().Msgf("Failed for push commit changes: %v", err)
-		return err
+		return util.LogError(fmt.Sprintf("failed for push commit changes: %v", err))
 	}
 
 	return nil
