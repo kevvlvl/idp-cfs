@@ -2,25 +2,27 @@ package contract
 
 import "idp-cfs2/git_api"
 
+type Code struct {
+	Tool    string  `yaml:"tool"`
+	Url     *string `yaml:"url,omitempty"`
+	Repo    string  `yaml:"repo"`
+	Branch  string  `yaml:"branch"`
+	Workdir *string `yaml:"workdir,omitempty"`
+}
+
+type GoldenPath struct {
+	Tool    string  `yaml:"tool"`
+	Url     string  `yaml:"url"`
+	Path    string  `yaml:"path"`
+	Branch  string  `yaml:"branch"`
+	Tag     *string `yaml:"tag,omitempty"`
+	Workdir *string `yaml:"workdir,omitempty"`
+}
+
 type Contract struct {
-	Action string `yaml:"action"`
-
-	Code struct {
-		Tool    string  `yaml:"tool"`
-		Url     *string `yaml:"url,omitempty"`
-		Repo    string  `yaml:"repo"`
-		Branch  string  `yaml:"branch"`
-		Workdir *string `yaml:"workdir,omitempty"`
-	} `yaml:"code"`
-
-	GoldenPath *struct {
-		Tool    string  `yaml:"tool"`
-		Url     string  `yaml:"url"`
-		Path    string  `yaml:"path"`
-		Branch  string  `yaml:"branch"`
-		Tag     *string `yaml:"tag,omitempty"`
-		Workdir *string `yaml:"workdir,omitempty"`
-	} `yaml:"golden-path,omitempty"`
+	Action     string      `yaml:"action"`
+	Code       *Code       `yaml:"code"`
+	GoldenPath *GoldenPath `yaml:"golden-path,omitempty"`
 
 	Deployment struct {
 		Kubernetes struct {

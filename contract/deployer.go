@@ -138,13 +138,15 @@ func validateState(s *State) error {
 
 func validateLocalStorageDirs(s *State) error {
 	if _, err := os.Stat(*s.Contract.GoldenPath.Workdir); !os.IsNotExist(err) {
-		log.Error().Msgf("Path %s exists. Please delete or change path to a non-existing directory!", *s.Contract.GoldenPath.Workdir)
-		return err
+		msg := fmt.Sprintf("path %s exists. Please delete or change path to a non-existing directory!", *s.Contract.GoldenPath.Workdir)
+		log.Error().Msg(msg)
+		return errors.New(msg)
 	}
 
 	if _, err := os.Stat(*s.Contract.Code.Workdir); !os.IsNotExist(err) {
-		log.Error().Msgf("Path %s exists. Please delete or change path to a non-existing directory!", *s.Contract.Code.Workdir)
-		return err
+		msg := fmt.Sprintf("path %s exists. Please delete or change path to a non-existing directory!", *s.Contract.Code.Workdir)
+		log.Error().Msg(msg)
+		return errors.New(msg)
 	}
 
 	return nil

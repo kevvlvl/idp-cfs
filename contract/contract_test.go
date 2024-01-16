@@ -43,25 +43,12 @@ func TestValidateInvalidContactCodeTool_ThenFalse(t *testing.T) {
 func validContractNewPlatform() Contract {
 	return Contract{
 		Action: "new-code",
-		Code: struct {
-			Tool    string  `yaml:"tool"`
-			Url     *string `yaml:"url,omitempty"`
-			Repo    string  `yaml:"repo"`
-			Branch  string  `yaml:"branch"`
-			Workdir *string `yaml:"workdir,omitempty"`
-		}{
+		Code: &Code{
 			Tool:   "github",
 			Repo:   "my-test-repo",
 			Branch: "main",
 		},
-		GoldenPath: &struct {
-			Tool    string  `yaml:"tool"`
-			Url     string  `yaml:"url"`
-			Path    string  `yaml:"path"`
-			Branch  string  `yaml:"branch"`
-			Tag     *string `yaml:"tag,omitempty"`
-			Workdir *string `yaml:"workdir,omitempty"`
-		}{
+		GoldenPath: &GoldenPath{
 			Url:    "http://github.local/some_test_url_gp",
 			Path:   "./",
 			Branch: "main",
