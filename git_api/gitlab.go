@@ -6,7 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/xanzy/go-gitlab"
 	"idp-cfs2/git_client"
-	"idp-cfs2/util"
+	"idp-cfs2/global"
 	"os"
 )
 
@@ -123,7 +123,7 @@ func getClient(url, token string) *gitlab.Client {
 func getProject(g *gitlab.Client, projectName string) (*gitlab.Project, error) {
 
 	p, resp, err := g.Projects.GetProject(projectName, nil)
-	err = util.ValidateApiResponse(resp.Response, err, "Error trying to get project")
+	err = global.ValidateApiResponse(resp.Response, err, "Error trying to get project")
 	if err != nil {
 		return nil, err
 	}
@@ -147,11 +147,11 @@ func createProject(g *gitlab.Client, projectName string) (*gitlab.Project, error
 
 		opts := &gitlab.CreateProjectOptions{
 			Name:          &projectName,
-			DefaultBranch: util.StringPtr("main"),
+			DefaultBranch: global.StringPtr("main"),
 		}
 
 		newProject, resp, err := g.Projects.CreateProject(opts)
-		err = util.ValidateApiResponse(resp.Response, err, "Error trying to create project")
+		err = global.ValidateApiResponse(resp.Response, err, "Error trying to create project")
 		if err != nil {
 			return nil, err
 		}

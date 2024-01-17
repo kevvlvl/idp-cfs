@@ -5,7 +5,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 	"idp-cfs2/global"
-	"idp-cfs2/util"
 	"os"
 )
 
@@ -71,11 +70,11 @@ func validate(contract *Contract) bool {
 
 		// Default value
 		if contract.Code.Workdir == nil || *contract.Code.Workdir == "" {
-			contract.Code.Workdir = util.StringPtr("/tmp/idp-cfs-code")
+			contract.Code.Workdir = global.StringPtr("/tmp/idp-cfs-code")
 		}
 
 		if contract.Code.Tool == global.ToolGithub && contract.Code.Url != nil {
-			contract.Code.Url = util.StringPtr("github.com")
+			contract.Code.Url = global.StringPtr("github.com")
 		}
 
 		// Validate Golden-Path section
@@ -91,7 +90,7 @@ func validate(contract *Contract) bool {
 
 			// Default value
 			if contract.GoldenPath.Workdir == nil || *contract.GoldenPath.Workdir == "" {
-				contract.GoldenPath.Workdir = util.StringPtr("/tmp/idp-cfs-gp")
+				contract.GoldenPath.Workdir = global.StringPtr("/tmp/idp-cfs-gp")
 			}
 		}
 

@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-github/v56/github"
 	"github.com/rs/zerolog/log"
 	"idp-cfs2/git_client"
-	"idp-cfs2/util"
+	"idp-cfs2/global"
 	"os"
 	"strings"
 )
@@ -119,7 +119,7 @@ func getGithubClient(authToken string) *GithubApi {
 	client := github.NewClient(nil).WithAuthToken(authToken)
 
 	user, resp, err := client.Users.Get(ctx, "")
-	err = util.ValidateApiResponse(resp.Response, err, "Error trying to get User")
+	err = global.ValidateApiResponse(resp.Response, err, "Error trying to get User")
 	if err != nil {
 		return nil
 	}
@@ -155,14 +155,14 @@ func (g *GithubApi) createRepository(repo string) (*github.Repository, error) {
 
 	newRepo := &github.Repository{
 		Name:        &repo,
-		Private:     util.BoolPtr(false),
-		Description: util.StringPtr(""),
-		AutoInit:    util.BoolPtr(false),
+		Private:     global.BoolPtr(false),
+		Description: global.StringPtr(""),
+		AutoInit:    global.BoolPtr(false),
 	}
 
 	r, resp, err := g.client.Repositories.Create(g.ctx, "", newRepo)
 
-	err = util.ValidateApiResponse(resp.Response, err, "Error trying to create repository")
+	err = global.ValidateApiResponse(resp.Response, err, "Error trying to create repository")
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (g *GithubApi) getRepository(repoName string) (*github.Repository, error) {
 	}
 
 	repo, resp, err := g.getRepoFunc(g.ctx, g.client, *g.user.Login, repoName)
-	err = util.ValidateApiResponse(resp.Response, err, "Error trying to get repository")
+	err = global.ValidateApiResponse(resp.Response, err, "Error trying to get repository")
 	if err != nil {
 		return nil, err
 	}

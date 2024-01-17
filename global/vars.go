@@ -1,4 +1,4 @@
-package util
+package global
 
 func BoolPtr(b bool) *bool {
 	return &b

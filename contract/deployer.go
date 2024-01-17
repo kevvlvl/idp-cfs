@@ -44,14 +44,6 @@ func GetState(dryRun bool, contractFilePath string) *State {
 
 func (s *State) Deploy() (IdpStatus, error) {
 
-	/*
-		TODO: caller and initializer of State
-			Test with Gitlab
-			introduce unit tests of gitlab
-			implement Github
-			Merge all code on feature branch of idp-cfs repo
-	*/
-
 	if err := validateState(s); err != nil {
 		return IdpStatusFailure, err
 	}
@@ -130,7 +122,7 @@ func validateState(s *State) error {
 	}
 
 	if s.GoldenPath == nil {
-		return errors.New("golden ptah cannot be nil. Ensure the git source is implemented properly")
+		return errors.New("golden path cannot be nil. Ensure the git source is implemented properly")
 	}
 
 	return nil
@@ -139,14 +131,13 @@ func validateState(s *State) error {
 func validateLocalStorageDirs(s *State) error {
 	if _, err := os.Stat(*s.Contract.GoldenPath.Workdir); !os.IsNotExist(err) {
 		msg := fmt.Sprintf("path %s exists. Please delete or change path to a non-existing directory!", *s.Contract.GoldenPath.Workdir)
-		log.Error().Msg(msg)
-		return errors.New(msg)
+		return global.LogError(msg)
 	}
 
 	if _, err := os.Stat(*s.Contract.Code.Workdir); !os.IsNotExist(err) {
+
 		msg := fmt.Sprintf("path %s exists. Please delete or change path to a non-existing directory!", *s.Contract.Code.Workdir)
-		log.Error().Msg(msg)
-		return errors.New(msg)
+		return global.LogError(msg)
 	}
 
 	return nil

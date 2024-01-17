@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"idp-cfs2/git_api"
-	"idp-cfs2/util"
+	"idp-cfs2/global"
 	"os"
 	"testing"
 )
@@ -40,7 +40,7 @@ func TestValidateState_NilGoldenPath_Error(t *testing.T) {
 	s.GoldenPath = nil
 	err := validateState(s)
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "golden ptah cannot be nil")
+	assert.Contains(t, err.Error(), "golden path cannot be nil")
 }
 
 func TestValidateLocalStorageDirs_NoDirs_NoErrors(t *testing.T) {
@@ -48,11 +48,11 @@ func TestValidateLocalStorageDirs_NoDirs_NoErrors(t *testing.T) {
 	s := getDryRunGithubState()
 
 	s.Contract.GoldenPath = &GoldenPath{
-		Workdir: util.StringPtr("/tmp/test_gp_dir"),
+		Workdir: global.StringPtr("/tmp/test_gp_dir"),
 	}
 
 	s.Contract.Code = &Code{
-		Workdir: util.StringPtr("/tmp/test_code_dir"),
+		Workdir: global.StringPtr("/tmp/test_code_dir"),
 	}
 
 	// test
@@ -65,15 +65,15 @@ func TestValidateLocalStorageDirs_CodeExists_Error(t *testing.T) {
 	s := getDryRunGithubState()
 
 	s.Contract.GoldenPath = &GoldenPath{
-		Workdir: util.StringPtr("/tmp/test_gp_dir"),
+		Workdir: global.StringPtr("/tmp/test_gp_dir"),
 	}
 
 	s.Contract.Code = &Code{
-		Workdir: util.StringPtr("/tmp/test_code_dir"),
+		Workdir: global.StringPtr("/tmp/test_code_dir"),
 	}
 
 	// test data create
-	err := util.CreateFolder(*s.Contract.Code.Workdir)
+	err := global.CreateFolder(*s.Contract.Code.Workdir)
 	assert.Nil(t, err)
 
 	// test
@@ -91,15 +91,15 @@ func TestValidateLocalStorageDirs_GoldenPathExists_Error(t *testing.T) {
 	s := getDryRunGithubState()
 
 	s.Contract.GoldenPath = &GoldenPath{
-		Workdir: util.StringPtr("/tmp/test_gp_dir"),
+		Workdir: global.StringPtr("/tmp/test_gp_dir"),
 	}
 
 	s.Contract.Code = &Code{
-		Workdir: util.StringPtr("/tmp/test_code_dir"),
+		Workdir: global.StringPtr("/tmp/test_code_dir"),
 	}
 
 	// test data create
-	err := util.CreateFolder(*s.Contract.GoldenPath.Workdir)
+	err := global.CreateFolder(*s.Contract.GoldenPath.Workdir)
 	assert.Nil(t, err)
 
 	// test

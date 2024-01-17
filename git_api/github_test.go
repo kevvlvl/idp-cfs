@@ -4,13 +4,13 @@ import (
 	"context"
 	"github.com/google/go-github/v56/github"
 	"github.com/stretchr/testify/assert"
-	"idp-cfs2/util"
+	"idp-cfs2/global"
 	"net/http"
 	"testing"
 )
 
 func getTestRepoName() *string {
-	return util.StringPtr("testRepo")
+	return global.StringPtr("testRepo")
 }
 
 func getStubRepositoryWithOrg() *github.Repository {
@@ -18,20 +18,20 @@ func getStubRepositoryWithOrg() *github.Repository {
 		Name:         getTestRepoName(),
 		Organization: getStubOrg(),
 		Owner:        getStubUser(),
-		URL:          util.StringPtr("http://cfs_idp_local_unit_test.local"),
+		URL:          global.StringPtr("http://cfs_idp_local_unit_test.local"),
 	}
 }
 
 func getStubOrg() *github.Organization {
 	return &github.Organization{
-		Name: util.StringPtr("testOrg"),
+		Name: global.StringPtr("testOrg"),
 	}
 }
 
 func getStubUser() *github.User {
 	return &github.User{
-		Name:  util.StringPtr("Unit McUnitTester"),
-		Login: util.StringPtr("unittest"),
+		Name:  global.StringPtr("Unit McUnitTester"),
+		Login: global.StringPtr("unittest"),
 	}
 }
 

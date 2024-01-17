@@ -3,7 +3,7 @@ package git_api
 import (
 	"github.com/rs/zerolog/log"
 	"idp-cfs2/git_client"
-	"idp-cfs2/util"
+	"idp-cfs2/global"
 	"path"
 )
 
@@ -25,7 +25,7 @@ func pushGoldenPath(tool, codeUrl, codeDefaultBranch, url, pathDir, branch, gpWo
 		_, err = git.CloneRepository(gpWorkdir, url, branch, gitGpAuth)
 		gpPath := path.Join(gpWorkdir, pathDir)
 
-		err = util.CopyFilesDeep(gpPath, codeWorkDir)
+		err = global.CopyFilesDeep(gpPath, codeWorkDir)
 		if err != nil {
 			log.Error().Msgf("Failed to copy files from goldenpath to code repo: %v", err)
 			return err
