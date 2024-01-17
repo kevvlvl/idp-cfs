@@ -1,4 +1,4 @@
-module idp-cfs2
+module idp-cfs
 
 go 1.21
 

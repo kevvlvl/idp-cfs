@@ -1,6 +1,6 @@
 package contract
 
-import "idp-cfs2/git_api"
+import "idp-cfs/git_api"
 
 type Code struct {
 	Tool    string  `yaml:"tool"`

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/xanzy/go-gitlab"
-	"idp-cfs2/git_client"
-	"idp-cfs2/global"
+	"idp-cfs/git_client"
+	"idp-cfs/global"
 	"os"
 )
 

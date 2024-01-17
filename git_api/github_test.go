@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/google/go-github/v56/github"
 	"github.com/stretchr/testify/assert"
-	"idp-cfs2/global"
+	"idp-cfs/global"
 	"net/http"
 	"testing"
 )

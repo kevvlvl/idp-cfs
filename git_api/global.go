@@ -2,8 +2,8 @@ package git_api
 
 import (
 	"github.com/rs/zerolog/log"
-	"idp-cfs2/git_client"
-	"idp-cfs2/global"
+	"idp-cfs/git_client"
+	"idp-cfs/global"
 	"path"
 )
 

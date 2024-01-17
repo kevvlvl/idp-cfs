@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/rs/zerolog/log"
-	"idp-cfs2/contract"
-	"idp-cfs2/flags"
+	"idp-cfs/contract"
+	"idp-cfs/flags"
 )
 
 func main() {

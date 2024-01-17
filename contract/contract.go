@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
-	"idp-cfs2/global"
+	"idp-cfs/global"
 	"os"
 )
 

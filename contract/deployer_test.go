@@ -3,8 +3,8 @@ package contract
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"idp-cfs2/git_api"
-	"idp-cfs2/global"
+	"idp-cfs/git_api"
+	"idp-cfs/global"
 	"os"
 	"testing"
 )

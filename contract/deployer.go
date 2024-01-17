@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
-	"idp-cfs2/git_api"
-	"idp-cfs2/global"
+	"idp-cfs/git_api"
+	"idp-cfs/global"
 	"os"
 )
 
