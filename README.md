@@ -41,7 +41,7 @@ go test -cover ./...
 
 ```shell
 go run main.go --dryRun=true \
-               --contractFile=./_docs/contract-examples/platform-order-new.yaml
+               --contractFile=./_docs/contract-examples/platform-order-new-gh.yaml
 ```
 
 ### Gitlab integration

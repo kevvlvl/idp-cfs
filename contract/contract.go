@@ -73,7 +73,7 @@ func validate(contract *Contract) bool {
 			contract.Code.Workdir = global.StringPtr("/tmp/idp-cfs-code")
 		}
 
-		if contract.Code.Tool == global.ToolGithub && contract.Code.Url != nil {
+		if contract.Code.Tool == global.ToolGithub && contract.Code.Url == nil {
 			contract.Code.Url = global.StringPtr("github.com")
 		}
 

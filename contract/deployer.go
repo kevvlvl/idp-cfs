@@ -26,6 +26,7 @@ func GetState(dryRun bool, contractFilePath string) *State {
 		state.Code = git_api.GetGitlabCodeClient(*c.Code.Url)
 	case global.ToolGithub:
 		state.Code = git_api.GetGithubCodeClient(*c.Code.Url)
+
 	default:
 		unexpectedResult(fmt.Sprintf("Tool = %s", c.Code.Tool))
 	}
