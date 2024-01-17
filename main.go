@@ -8,18 +8,18 @@ import (
 
 func main() {
 
+	log.Info().Msg("START IDP-CFS2")
+
 	args := flags.GetCommandArgs()
-	proc, err := contract.GetProcessor(args.ContractFile, args.GpClonePath, args.CodeClonePath)
+	state := contract.GetState(args.DryRun, args.ContractFile)
 
-	if err == nil && proc != nil {
-		dryRunResult, err := proc.Execute(args.DryRunMode)
-
+	if state != nil {
+		_, err := state.Deploy()
 		if err != nil {
-			log.Error().Msgf("Error trying to execute: %v", err)
-		}
-
-		if dryRunResult == contract.IdpStatusSuccess {
-			log.Info().Msgf("Successfuly executed the idp-cfs contract. Your are now ready to code!")
+			log.Error().Msgf("Error when trying to deploy: %v", err)
+			return
 		}
 	}
+
+	log.Info().Msg("COMPLETED IDP-CFS2")
 }

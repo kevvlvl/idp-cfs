@@ -1,0 +1,35 @@
+# Possible actions: new-code, update-code
+action: new-code
+
+code:
+  # Possible options: github, gitlab, gitea
+  tool: github
+  # org (optional) the organization in your git system
+  #  org: kevvlvl
+  # repository name
+  repo: my-api-app
+  # base branch
+  branch: main
+
+# Optional: Define an existing golden path (GP), otherwise start with an empty git repo
+golden-path:
+  # Possible options: github, gitlab, gitea
+  tool: github
+  # URL of the git repo where the gp is found. must be a public repo
+  url: https://github.com/kevvlvl/idp-cfs.git
+  # The path where the golden path is located
+  path: _gp/golang/gochi-app
+  # branch name where the gp resides.
+  branch: feature/alpha
+  # Optional: tag to specify a stable version. Default = latest commit
+  # tag: release_1.0
+
+deployment:
+  # Target deployment is kubernetes
+  kubernetes:
+    # Possible options depend on the cluster URL:
+    cluster-url: k8s.cluster.local
+    # Namespace where to deploy the app. This namespace will be created if it does not exist
+    namespace: apps
+    # Enables centralized logging into Grafana loki
+    logs: true

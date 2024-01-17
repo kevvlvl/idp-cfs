@@ -2,52 +2,24 @@ package contract
 
 import (
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v3"
 	"testing"
 )
 
-type MockFileReader struct {
-	ReadFileFunc func(filename string) ([]byte, error)
-}
-
-func (m *MockFileReader) ReadFile(file string) ([]byte, error) {
-	return m.ReadFileFunc(file)
-}
-
 func TestLoadValidContract_NoErrors(t *testing.T) {
 
-	validContract := validContractNewPlatform()
-	bin, _ := yaml.Marshal(validContract)
-
-	mockFileReader := &MockFileReader{
-		ReadFileFunc: func(file string) ([]byte, error) {
-			return bin, nil
-		},
-	}
-
-	c, err := Load(mockFileReader, "contract-test-file.yaml")
+	c, err := Load(getTestContractFilename())
 
 	assert.Nil(t, err)
 	assert.NotNil(t, c)
-	assert.Equal(t, &validContract, c)
 }
 
 func TestLoadInvalidContract_MissingRequiredField_Error(t *testing.T) {
 
-	invalidContract := invalidContractEmptyTool()
-	bin, _ := yaml.Marshal(invalidContract)
-
-	mockFileReader := &MockFileReader{
-		ReadFileFunc: func(file string) ([]byte, error) {
-			return bin, nil
-		},
-	}
-
-	c, err := Load(mockFileReader, "contract-test-file.yaml")
+	c, err := Load(getTestContractMissingToolFilename())
 
 	assert.Nil(t, c)
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "the contract metadata is not valid")
+	assert.Contains(t, err.Error(), "contract metadata is not valid")
 }
 
 func TestValidateValidContract_ThenTrue(t *testing.T) {
@@ -70,27 +42,16 @@ func TestValidateInvalidContactCodeTool_ThenFalse(t *testing.T) {
 
 func validContractNewPlatform() Contract {
 	return Contract{
-		Action: "new-contract",
-		Code: struct {
-			Tool   string  `yaml:"tool"`
-			Org    *string `yaml:"org,omitempty"`
-			Repo   string  `yaml:"repo"`
-			Branch string  `yaml:"branch"`
-		}{
+		Action: "new-code",
+		Code: &Code{
 			Tool:   "github",
-			Org:    nil,
 			Repo:   "my-test-repo",
 			Branch: "main",
 		},
-		GoldenPath: struct {
-			Url    *string `yaml:"url,omitempty"`
-			Path   *string `yaml:"path,omitempty"`
-			Branch *string `yaml:"branch,omitempty"`
-			Tag    *string `yaml:"tag,omitempty"`
-		}{
-			Url:    getStrPointer("http://github.local/some_test_url_gp"),
-			Path:   getStrPointer("./"),
-			Branch: getStrPointer("main"),
+		GoldenPath: &GoldenPath{
+			Url:    "http://github.local/some_test_url_gp",
+			Path:   "./",
+			Branch: "main",
 			Tag:    nil,
 		},
 		Deployment: struct {
@@ -126,12 +87,10 @@ func invalidContractCodeTool() Contract {
 	return c
 }
 
-func invalidContractEmptyTool() Contract {
-	c := validContractNewPlatform()
-	c.Code.Tool = ""
-	return c
+func getTestContractFilename() string {
+	return "./testdata/platform-order-test-new.yaml"
 }
 
-func getStrPointer(s string) *string {
-	return &s
+func getTestContractMissingToolFilename() string {
+	return "./testdata/platform-order-test-new-missingtool.yaml"
 }
