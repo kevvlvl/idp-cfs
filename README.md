@@ -43,9 +43,3 @@ go test -cover ./...
 go run main.go --dryRun=true \
                --contractFile=./_docs/contract-examples/platform-order-new-gh.yaml
 ```
-
-### Gitlab integration
-
-- local instance (container) @ `http://localhost:80` user root/superlab
-- Golden Path: `http://localhost/idp-cfs/goldenpath`
-- Code Repo: `http://localhost/idp-cfs/code`
