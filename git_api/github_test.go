@@ -58,3 +58,26 @@ func TestGetRepository_ValidRepoWithOrg_NoError(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, repository)
 }
+
+func TestHasAuth_Nil_Error(t *testing.T) {
+
+	r := hasAuthUser(nil)
+	assert.False(t, r)
+}
+
+func TestCreateRepository_Valid_NoError(t *testing.T) {
+
+	c := getGithubClientWithoutAuth()
+	c.user = getStubUser()
+	c.createRepoFunc = func(ctx context.Context, c *github.Client, org string, repo *github.Repository) (*github.Repository, *github.Response, error) {
+		return getStubRepositoryWithOrg(), getStubValidResponse(200), nil
+	}
+
+	c.createFileFunc = func(ctx context.Context, c *github.Client, owner, repo, path string, opts *github.RepositoryContentFileOptions) error {
+		return nil
+	}
+
+	repo, err := c.createRepository("unitTestRepository")
+	assert.Nil(t, err)
+	assert.NotNil(t, repo)
+}

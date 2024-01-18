@@ -133,6 +133,13 @@ func getGithubClient(authToken string) *GithubApi {
 		getRepoFunc: func(ctx context.Context, c *github.Client, owner, repo string) (*github.Repository, *github.Response, error) {
 			return c.Repositories.Get(ctx, owner, repo)
 		},
+		createRepoFunc: func(ctx context.Context, c *github.Client, org string, repo *github.Repository) (*github.Repository, *github.Response, error) {
+			return c.Repositories.Create(ctx, "", repo)
+		},
+		createFileFunc: func(ctx context.Context, c *github.Client, owner, repo, path string, opts *github.RepositoryContentFileOptions) error {
+			_, _, err := c.Repositories.CreateFile(ctx, owner, repo, path, opts)
+			return err
+		},
 	}
 }
 
@@ -142,6 +149,13 @@ func getGithubClientWithoutAuth() *GithubApi {
 		ctx:    context.Background(),
 		getRepoFunc: func(ctx context.Context, c *github.Client, owner, repo string) (*github.Repository, *github.Response, error) {
 			return c.Repositories.Get(ctx, owner, repo)
+		},
+		createRepoFunc: func(ctx context.Context, c *github.Client, org string, repo *github.Repository) (*github.Repository, *github.Response, error) {
+			return c.Repositories.Create(ctx, "", repo)
+		},
+		createFileFunc: func(ctx context.Context, c *github.Client, owner, repo, path string, opts *github.RepositoryContentFileOptions) error {
+			_, _, err := c.Repositories.CreateFile(ctx, owner, repo, path, opts)
+			return err
 		},
 	}
 }
@@ -160,7 +174,7 @@ func (g *GithubApi) createRepository(repo string) (*github.Repository, error) {
 		AutoInit:    global.BoolPtr(false),
 	}
 
-	r, resp, err := g.client.Repositories.Create(g.ctx, "", newRepo)
+	r, resp, err := g.createRepoFunc(g.ctx, g.client, "", newRepo)
 
 	err = global.ValidateApiResponse(resp.Response, err, "Error trying to create repository")
 	if err != nil {
@@ -174,9 +188,7 @@ func (g *GithubApi) createRepository(repo string) (*github.Repository, error) {
 		Content: []byte(""),
 	}
 
-	login := *g.user.Login
-
-	_, _, err = g.client.Repositories.CreateFile(g.ctx, login, repo, "README.md", emptyCommit)
+	err = g.createFileFunc(g.ctx, g.client, *g.user.Login, repo, "README.md", emptyCommit)
 	if err != nil {
 		log.Error().Msgf("Error creating a file for the empty commit: %v", err)
 		return nil, err

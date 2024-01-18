@@ -15,11 +15,13 @@ type GitSource interface {
 }
 
 type GithubApi struct {
-	client      *github.Client
-	user        *github.User
-	ctx         context.Context
-	repository  *github.Repository
-	getRepoFunc func(ctx context.Context, c *github.Client, owner, repo string) (*github.Repository, *github.Response, error)
+	client         *github.Client
+	user           *github.User
+	ctx            context.Context
+	repository     *github.Repository
+	getRepoFunc    func(ctx context.Context, c *github.Client, owner, repo string) (*github.Repository, *github.Response, error)
+	createRepoFunc func(ctx context.Context, c *github.Client, org string, repo *github.Repository) (*github.Repository, *github.Response, error)
+	createFileFunc func(ctx context.Context, c *github.Client, owner, repo, path string, opts *github.RepositoryContentFileOptions) error
 }
 
 type GitlabApi struct {
