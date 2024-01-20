@@ -151,12 +151,20 @@ func (g *GitClient) PushFiles(repo *git.Repository, auth *GitClientAuth) error {
 
 	log.Info().Msgf("Files Commit. %v", commit)
 
-	err = g.pushFunc(repo, &git.PushOptions{
-		Auth: &http.BasicAuth{
-			Username: auth.User,
-			Password: auth.Token,
-		},
-	})
+	if auth != nil {
+
+		err = g.pushFunc(repo, &git.PushOptions{
+			Auth: &http.BasicAuth{
+				Username: auth.User,
+				Password: auth.Token,
+			},
+		})
+
+	} else {
+
+		err = g.pushFunc(repo, &git.PushOptions{})
+	}
+
 	if err != nil {
 		return global.LogError(fmt.Sprintf("failed for push commit changes: %v", err))
 	}

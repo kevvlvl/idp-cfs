@@ -2,6 +2,7 @@ package git_api
 
 import (
 	"context"
+	"errors"
 	"github.com/google/go-github/v56/github"
 	"github.com/stretchr/testify/assert"
 	"idp-cfs/global"
@@ -80,4 +81,28 @@ func TestCreateRepository_Valid_NoError(t *testing.T) {
 	repo, err := c.createRepository("unitTestRepository")
 	assert.Nil(t, err)
 	assert.NotNil(t, repo)
+}
+
+func TestCreateRepository_CreateFileNil_Error(t *testing.T) {
+
+	c := getGithubClientWithoutAuth()
+	c.user = getStubUser()
+	c.createRepoFunc = func(ctx context.Context, c *github.Client, org string, repo *github.Repository) (*github.Repository, *github.Response, error) {
+		return getStubRepositoryWithOrg(), getStubValidResponse(200), nil
+	}
+
+	c.createFileFunc = func(ctx context.Context, c *github.Client, owner, repo, path string, opts *github.RepositoryContentFileOptions) error {
+		return errors.New("error on create")
+	}
+
+	repo, err := c.createRepository("unitTestRepository")
+	assert.Nil(t, repo)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "error creating a file for the empty commit")
+}
+
+func TestGetGithubGpClient_NoErrors(t *testing.T) {
+
+	client := GetGithubGpClient("https://unittest-local-git.local")
+	assert.NotNil(t, client)
 }

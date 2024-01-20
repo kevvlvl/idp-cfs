@@ -86,13 +86,11 @@ func GetGithubCodeClient(url string) *GithubApi {
 		return nil
 	}
 
-	if auth == nil {
-		return getGithubClientWithoutAuth()
-	} else if auth.codeDefined {
+	if auth.codeDefined {
 		return getGithubClient(auth.codeToken)
+	} else {
+		return getGithubClientWithoutAuth()
 	}
-
-	return nil
 }
 
 func GetGithubGpClient(url string) *GithubApi {
@@ -104,13 +102,11 @@ func GetGithubGpClient(url string) *GithubApi {
 		return nil
 	}
 
-	if auth == nil {
-		return getGithubClientWithoutAuth()
-	} else if auth.gpDefined {
+	if auth.gpDefined {
 		return getGithubClient(auth.gpToken)
+	} else {
+		return getGithubClientWithoutAuth()
 	}
-
-	return nil
 }
 
 func getGithubClient(authToken string) *GithubApi {
@@ -190,8 +186,9 @@ func (g *GithubApi) createRepository(repo string) (*github.Repository, error) {
 
 	err = g.createFileFunc(g.ctx, g.client, *g.user.Login, repo, "README.md", emptyCommit)
 	if err != nil {
-		log.Error().Msgf("Error creating a file for the empty commit: %v", err)
-		return nil, err
+		msg := fmt.Sprintf("error creating a file for the empty commit: %v", err)
+		log.Error().Msg(msg)
+		return nil, errors.New(msg)
 	}
 
 	return r, nil
