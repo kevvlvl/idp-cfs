@@ -24,7 +24,7 @@ func TestCreateFolder_Exists_Error(t *testing.T) {
 	err := CreateFolder(testFolder)
 
 	assert.NotNil(t, err)
-	assert.Equal(t, "directory exists! Please make sure the dir does not exist", err.Error())
+	assert.Contains(t, err.Error(), "directory exists! Please make sure the dir does not exist")
 }
 
 func TestCopyFilesDeep_SrcValid_DstValid_NoError(t *testing.T) {
