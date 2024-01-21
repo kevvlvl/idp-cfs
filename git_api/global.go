@@ -27,13 +27,13 @@ func pushGoldenPath(tool, codeUrl, codeDefaultBranch, url, pathDir, branch, gpWo
 
 		err = global.CopyFilesDeep(gpPath, codeWorkDir)
 		if err != nil {
-			log.Error().Msgf("Failed to copy files from goldenpath to code repo: %v", err)
+			log.Error().Msgf("pushGoldenPath() - Failed to copy files from goldenpath to code repo: %v", err)
 			return err
 		}
 
 		err = git.PushFiles(codeRepo, gitCodeAuth)
 		if err != nil {
-			log.Error().Msgf("Failed to push files to the code repo: %v", err)
+			log.Error().Msgf("pushGoldenPath() - Failed to push files to the code repo: %v", err)
 			return err
 		}
 	}

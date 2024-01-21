@@ -28,7 +28,7 @@ func GetState(dryRun bool, contractFilePath string) *State {
 		state.Code = git_api.GetGithubCodeClient(*c.Code.Url)
 
 	default:
-		unexpectedResult(fmt.Sprintf("Tool = %s", c.Code.Tool))
+		unexpectedResult(fmt.Sprintf("GetState() - Tool = %s", c.Code.Tool))
 	}
 
 	switch c.GoldenPath.Tool {
@@ -37,7 +37,7 @@ func GetState(dryRun bool, contractFilePath string) *State {
 	case global.ToolGithub:
 		state.GoldenPath = git_api.GetGithubGpClient(c.GoldenPath.Url)
 	default:
-		unexpectedResult(fmt.Sprintf("Tool = %s", c.GoldenPath.Tool))
+		unexpectedResult(fmt.Sprintf("GetState() - Tool = %s", c.GoldenPath.Tool))
 	}
 
 	return state
@@ -54,7 +54,7 @@ func (s *State) Deploy() (IdpStatus, error) {
 	}
 
 	// DRY-RUN SECTION STARTS HERE
-	log.Info().Msg("START Dry-Run")
+	log.Info().Msg("Deploy() - START Dry-Run")
 
 	switch s.Contract.Action {
 	case global.NewCode:
@@ -66,7 +66,7 @@ func (s *State) Deploy() (IdpStatus, error) {
 			return IdpStatusFailure, err
 		}
 	default:
-		unexpectedResult(fmt.Sprintf("Action = %s", s.Contract.Action))
+		unexpectedResult(fmt.Sprintf("Deploy() - Action = %s", s.Contract.Action))
 	}
 
 	if s.GoldenPath != nil {
@@ -76,12 +76,12 @@ func (s *State) Deploy() (IdpStatus, error) {
 		}
 	}
 
-	log.Info().Msg("COMPLETED Dry-Run")
+	log.Info().Msg("Deploy() - COMPLETED Dry-Run")
 
 	// if dryRun is false, deploy!
 	if s.DryRun == false {
 
-		log.Info().Msg("START Real Deployment")
+		log.Info().Msg("Deploy() - START Real Deployment")
 
 		switch s.Contract.Action {
 		case global.NewCode:
@@ -104,10 +104,10 @@ func (s *State) Deploy() (IdpStatus, error) {
 		case global.UpdateCode:
 			// TODO Update repo
 		default:
-			unexpectedResult(fmt.Sprintf("Action = %s", s.Contract.Action))
+			unexpectedResult(fmt.Sprintf("Deploy() - Action = %s", s.Contract.Action))
 		}
 
-		log.Info().Msg("COMPLETED Real Deployment")
+		log.Info().Msg("Deploy() - COMPLETED Real Deployment")
 	}
 
 	return IdpStatusSuccess, nil
@@ -132,13 +132,15 @@ func validateState(s *State) error {
 func validateLocalStorageDirs(s *State) error {
 	if _, err := os.Stat(*s.Contract.GoldenPath.Workdir); !os.IsNotExist(err) {
 		msg := fmt.Sprintf("path %s exists. Please delete or change path to a non-existing directory!", *s.Contract.GoldenPath.Workdir)
-		return global.LogError(msg)
+		log.Error().Msgf("validateLocalStorageDirs() - %s", msg)
+		return errors.New(msg)
 	}
 
 	if _, err := os.Stat(*s.Contract.Code.Workdir); !os.IsNotExist(err) {
 
 		msg := fmt.Sprintf("path %s exists. Please delete or change path to a non-existing directory!", *s.Contract.Code.Workdir)
-		return global.LogError(msg)
+		log.Error().Msgf("validateLocalStorageDirs() - %s", msg)
+		return errors.New(msg)
 	}
 
 	return nil

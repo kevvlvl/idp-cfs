@@ -15,14 +15,14 @@ func Load(filePath string) (*Contract, error) {
 	buf, err := os.ReadFile(filePath)
 
 	if err != nil {
-		log.Error().Msgf("error trying to read contract file: %v", err)
+		log.Error().Msgf("Load() - error trying to read contract file: %v", err)
 		return nil, err
 	}
 
 	err = yaml.Unmarshal(buf, c)
 
 	if err != nil {
-		log.Error().Msgf("Failed to unmarshal buffer: %v", err)
+		log.Error().Msgf("Load() - Failed to unmarshal buffer: %v", err)
 		return nil, err
 	}
 
@@ -32,7 +32,7 @@ func Load(filePath string) (*Contract, error) {
 
 		errorMsg := "contract metadata is not valid"
 
-		log.Error().Msg(errorMsg)
+		log.Error().Msgf("Load() - %s", errorMsg)
 		return nil, errors.New(errorMsg)
 	}
 
@@ -100,10 +100,10 @@ func validate(contract *Contract) bool {
 			contract.Deployment.Kubernetes.Namespace != ""
 	}
 
-	log.Info().Msgf("Valid Contract Action: %v", validAction)
-	log.Info().Msgf("Valid Contract Code Git Tool: %v - Values: %v", validCode, validCodeValues)
-	log.Info().Msgf("Valid Contract Golden-Path: %v", validGpValues)
-	log.Info().Msgf("Valid Contract Deployment: %v", validDeployment)
+	log.Info().Msgf("validate() - Valid Contract Action: %v", validAction)
+	log.Info().Msgf("validate() - Valid Contract Code Git Tool: %v - Values: %v", validCode, validCodeValues)
+	log.Info().Msgf("validate() - Valid Contract Golden-Path: %v", validGpValues)
+	log.Info().Msgf("validate() - Valid Contract Deployment: %v", validDeployment)
 
 	return validAction && validCode && validCodeValues && validGpValues && validDeployment
 }

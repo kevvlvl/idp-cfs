@@ -15,14 +15,14 @@ func (g *GitlabApi) ValidateNewCode(repoName string) error {
 	project, err := getProject(g.client, repoName)
 
 	if project == nil && err != nil {
-		log.Info().Msgf("Project %s does not exist.", repoName)
+		log.Info().Msgf("ValidateNewCode() - Project %s does not exist.", repoName)
 		return nil
 	} else if project != nil && err == nil {
 		repoFound := fmt.Sprint("found Project when we did not expect one. Review contract code repo name and action")
-		log.Warn().Msgf(repoFound)
+		log.Warn().Msgf("ValidateNewCode() - %s", repoFound)
 		return errors.New(repoFound)
 	} else {
-		log.Error().Msgf("Unexpected error returned: %v", err)
+		log.Error().Msgf("ValidateNewCode() - Unexpected error returned: %v", err)
 		return err
 	}
 }
@@ -43,15 +43,15 @@ func (g *GitlabApi) ValidateGoldenPath(url, branch, workDir string) error {
 	git := git_client.GetGitClient()
 	_, err := git.CloneRepository(workDir, url, branch, gitAuth)
 	if err != nil {
-		log.Error().Msgf("Failed to clone golden path repo: %v", err)
+		log.Error().Msgf("ValidateGoldenPath() - Failed to clone golden path repo: %v", err)
 	}
 
-	log.Info().Msgf("Cloned the repo")
+	log.Info().Msgf("ValidateGoldenPath() - Cloned the repo")
 
 	// Delete the cloned repo if in dry-run. Otherwise, keep it to push this in the new code git repo
 	err = os.RemoveAll(workDir)
 	if err != nil {
-		log.Error().Msgf("failed to delete the clone path: %v", err)
+		log.Error().Msgf("ValidateGoldenPath() - failed to delete the clone path: %v", err)
 		return err
 	}
 
@@ -62,7 +62,7 @@ func (g *GitlabApi) CreateRepo(repoName string) error {
 
 	p, err := createProject(g.client, repoName)
 	if err != nil {
-		log.Error().Msgf("Failed to Create Gitlab Project: %v", err)
+		log.Error().Msgf("CreateRepo() - Failed to Create Gitlab Project: %v", err)
 		return err
 	}
 
@@ -79,7 +79,7 @@ func GetGitlabCodeClient(url string) *GitlabApi {
 
 	auth := getAuth(ToolGitlab)
 	if auth == nil {
-		log.Error().Msg("Cannot return client without auth info")
+		log.Error().Msg("GetGitlabCodeClient() - Cannot return client without auth info")
 		return nil
 	}
 
@@ -96,7 +96,7 @@ func GetGitlabGpClient(url string) *GitlabApi {
 
 	auth := getAuth("gitlab")
 	if auth == nil {
-		log.Error().Msg("Cannot return client without auth info")
+		log.Error().Msg("GetGitlabGpClient() - Cannot return client without auth info")
 		return nil
 	}
 
@@ -113,7 +113,7 @@ func getClient(url, token string) *gitlab.Client {
 
 	c, err := gitlab.NewClient(token, gitlab.WithBaseURL(url))
 	if err != nil {
-		log.Error().Msgf("Failed to acquire Gitlab basic auth client: %v", err)
+		log.Error().Msgf("getClient() - Failed to acquire Gitlab basic auth client: %v", err)
 		return nil
 	}
 
@@ -128,20 +128,20 @@ func getProject(g *gitlab.Client, projectName string) (*gitlab.Project, error) {
 		return nil, err
 	}
 
-	log.Info().Msgf("Found Project: %s", p.Name)
+	log.Info().Msgf("getProject() - Found Project: %s", p.Name)
 
 	return p, nil
 }
 
 func createProject(g *gitlab.Client, projectName string) (*gitlab.Project, error) {
 
-	log.Info().Msgf("START Gitlab createProject: %s", projectName)
+	log.Info().Msgf("createProject() - START Gitlab createProject: %s", projectName)
 
 	p, err := getProject(g, projectName)
 
 	if err == nil {
 		msg := "found a Gitlab project with the name. Cannot create a new project"
-		log.Warn().Msg(msg)
+		log.Warn().Msgf("createProject() - %s", msg)
 		return nil, errors.New(msg)
 	} else {
 
@@ -159,6 +159,6 @@ func createProject(g *gitlab.Client, projectName string) (*gitlab.Project, error
 		p = newProject
 	}
 
-	log.Info().Msgf("END Gitlab createProject")
+	log.Info().Msgf("createProject() - END Gitlab createProject")
 	return p, nil
 }

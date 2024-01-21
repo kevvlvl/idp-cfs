@@ -16,15 +16,15 @@ func (g *GithubApi) ValidateNewCode(repoName string) error {
 
 	repo, err := g.getRepository(repoName)
 	if repo == nil && err != nil && strings.HasPrefix(err.Error(), "HTTP404") {
-		log.Info().Msgf("Repo %s does not exist.", repoName)
+		log.Info().Msgf("ValidateNewCode() - Repo %s does not exist.", repoName)
 	} else if repo != nil {
 
 		repoFound := fmt.Sprint("found Repository with same name. Review contract code repo name")
-		log.Warn().Msgf(repoFound)
+		log.Warn().Msgf("ValidateNewCode() - %s", repoFound)
 		return errors.New(repoFound)
 	} else {
 
-		log.Error().Msgf("Unexpected error returned: %v", err)
+		log.Error().Msgf("ValidateNewCode() - Unexpected error returned: %v", err)
 		return err
 	}
 
@@ -47,15 +47,15 @@ func (g *GithubApi) ValidateGoldenPath(url, branch, workDir string) error {
 	git := git_client.GetGitClient()
 	_, err := git.CloneRepository(workDir, url, branch, gitAuth)
 	if err != nil {
-		log.Error().Msgf("Failed to clone golden path repo: %v", err)
+		log.Error().Msgf("ValidateGoldenPath() - Failed to clone golden path repo: %v", err)
 	}
 
-	log.Info().Msgf("Cloned the repo")
+	log.Info().Msgf("ValidateGoldenPath() - Cloned the repo")
 
 	// Delete the cloned repo if in dry-run. Otherwise, keep it to push this in the new code git repo
 	err = os.RemoveAll(workDir)
 	if err != nil {
-		log.Error().Msgf("failed to delete the clone path: %v", err)
+		log.Error().Msgf("ValidateGoldenPath() - failed to delete the clone path: %v", err)
 		return err
 	}
 
@@ -82,7 +82,7 @@ func GetGithubCodeClient(url string) *GithubApi {
 	auth := getAuth(ToolGithub)
 
 	if auth == nil && url != "" {
-		log.Error().Msg("Cannot return client without auth info for on-premise Github")
+		log.Error().Msg("GetGithubCodeClient() - Cannot return client without auth info for on-premise Github")
 		return nil
 	}
 
@@ -98,7 +98,7 @@ func GetGithubGpClient(url string) *GithubApi {
 	auth := getAuth(ToolGithub)
 
 	if auth == nil && url != "" {
-		log.Error().Msg("Cannot return client without auth info for on-premise Github")
+		log.Error().Msg("GetGithubGpClient() - Cannot return client without auth info for on-premise Github")
 		return nil
 	}
 
@@ -115,12 +115,12 @@ func getGithubClient(authToken string) *GithubApi {
 	client := github.NewClient(nil).WithAuthToken(authToken)
 
 	user, resp, err := client.Users.Get(ctx, "")
-	err = global.ValidateApiResponse(resp.Response, err, "Error trying to get User")
+	err = global.ValidateApiResponse(resp.Response, err, "getGithubClient() - Error trying to get User")
 	if err != nil {
 		return nil
 	}
 
-	log.Debug().Msgf("Found User %v: ", user)
+	log.Debug().Msgf("getGithubClient() - Found User %v: ", user)
 
 	return &GithubApi{
 		client: client,
@@ -157,7 +157,7 @@ func getGithubClientWithoutAuth() *GithubApi {
 }
 
 func (g *GithubApi) createRepository(repo string) (*github.Repository, error) {
-	log.Info().Msgf("CreateRepository - Create the repo %s", repo)
+	log.Info().Msgf("createRepository() - Create the repo %s", repo)
 
 	if !hasAuthUser(g.user) {
 		return nil, errors.New("not authenticated")
@@ -177,7 +177,7 @@ func (g *GithubApi) createRepository(repo string) (*github.Repository, error) {
 		return nil, err
 	}
 
-	log.Info().Msgf("Created the repo. Created on (timestamp): %v", r.CreatedAt)
+	log.Info().Msgf("createRepository() - Created the repo. Created on (timestamp): %v", r.CreatedAt)
 
 	emptyCommit := &github.RepositoryContentFileOptions{
 		Message: github.String("Initial commit"),
@@ -187,7 +187,7 @@ func (g *GithubApi) createRepository(repo string) (*github.Repository, error) {
 	err = g.createFileFunc(g.ctx, g.client, *g.user.Login, repo, "README.md", emptyCommit)
 	if err != nil {
 		msg := fmt.Sprintf("error creating a file for the empty commit: %v", err)
-		log.Error().Msg(msg)
+		log.Error().Msgf("createRepository() - %s", msg)
 		return nil, errors.New(msg)
 	}
 
@@ -196,7 +196,7 @@ func (g *GithubApi) createRepository(repo string) (*github.Repository, error) {
 
 func (g *GithubApi) getRepository(repoName string) (*github.Repository, error) {
 
-	log.Info().Msgf("GetRepository - Search for %s", repoName)
+	log.Info().Msgf("getRepository() - Search for %s", repoName)
 
 	if !hasAuthUser(g.user) {
 		return nil, errors.New("not authenticated")
@@ -208,7 +208,7 @@ func (g *GithubApi) getRepository(repoName string) (*github.Repository, error) {
 		return nil, err
 	}
 
-	log.Info().Msg("Repo found")
+	log.Info().Msg("getRepository() - Repo found")
 
 	return repo, nil
 }
@@ -216,7 +216,7 @@ func (g *GithubApi) getRepository(repoName string) (*github.Repository, error) {
 func hasAuthUser(u *github.User) bool {
 
 	if u == nil {
-		log.Error().Msg("github user is null. Need authentication to call Github API")
+		log.Error().Msg("hasAuthUser() - github user is null. Need authentication to call Github API")
 		return false
 	}
 

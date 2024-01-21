@@ -1,6 +1,7 @@
 package git_client
 
 import (
+	"errors"
 	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -48,7 +49,9 @@ func (g *GitClient) CloneRepository(path, gitUrl string, branch string, auth *Gi
 
 	err := global.CreateFolder(path)
 	if err != nil {
-		return nil, global.LogError(fmt.Sprintf("failed to create folder at path %s: %v", path, err))
+		msg := fmt.Sprintf("failed to create folder at path %s: %v", path, err)
+		log.Error().Msgf("CloneRepository() - %s", msg)
+		return nil, errors.New(msg)
 	}
 
 	var r *git.Repository
@@ -56,7 +59,7 @@ func (g *GitClient) CloneRepository(path, gitUrl string, branch string, auth *Gi
 
 	if auth != nil {
 
-		log.Info().Msg("Cloning public repo with auth")
+		log.Info().Msg("CloneRepository() - Cloning public repo with auth")
 
 		r, err = g.plainCloneFunc(
 			path,
@@ -72,7 +75,7 @@ func (g *GitClient) CloneRepository(path, gitUrl string, branch string, auth *Gi
 			})
 	} else {
 
-		log.Info().Msg("Cloning private repo without any auth")
+		log.Info().Msg("CloneRepository() - Cloning private repo without any auth")
 
 		r, err = g.plainCloneFunc(path,
 			false,
@@ -84,23 +87,30 @@ func (g *GitClient) CloneRepository(path, gitUrl string, branch string, auth *Gi
 	}
 
 	if err != nil {
-		return nil, global.LogError(fmt.Sprintf("failed to clone repo: %v", err))
+		msg := fmt.Sprintf("failed to clone repo: %v", err)
+		log.Error().Msgf("CloneRepository() - %s", msg)
+		return nil, errors.New(msg)
 	}
 
 	headRef, err := g.headFunc(r)
 	if err != nil {
-		return nil, global.LogError(fmt.Sprintf("failed to return HEAD reference: %v", err))
+		msg := fmt.Sprintf("failed to return HEAD reference: %v", err)
+		log.Error().Msgf("CloneRepository() - %s", msg)
+		return nil, errors.New(msg)
 	}
 
-	log.Info().Msgf("Cloned the git repo at %s. HEAD ref: %s", path, headRef)
+	log.Info().Msgf("CloneRepository() - Cloned the git repo at %s. HEAD ref: %s", path, headRef)
 
 	branchRef := g.getRefForBranch(r, branchRefStr)
 
-	log.Info().Msgf("Found branch with ref %+v", branchRef)
+	log.Info().Msgf("CloneRepository() - Found branch with ref %+v", branchRef)
 
 	w, err := g.workTreeFunc(r)
 	if err != nil {
-		return nil, global.LogError(fmt.Sprintf("failed to get worktree for repo: %v", err))
+
+		msg := fmt.Sprintf("failed to get worktree for repo: %v", err)
+		log.Error().Msgf("CloneRepository() - %s", msg)
+		return nil, errors.New(msg)
 	}
 
 	err = g.checkoutFunc(w, &git.CheckoutOptions{
@@ -109,7 +119,9 @@ func (g *GitClient) CloneRepository(path, gitUrl string, branch string, auth *Gi
 	})
 
 	if err != nil {
-		return nil, global.LogError(fmt.Sprintf("failed to checkout branch: %v", err))
+		msg := fmt.Sprintf("failed to checkout branch: %v", err)
+		log.Error().Msgf("CloneRepository() - %s", msg)
+		return nil, errors.New(msg)
 	}
 
 	return r, nil
@@ -119,22 +131,30 @@ func (g *GitClient) PushFiles(repo *git.Repository, auth *GitClientAuth) error {
 
 	_, err := g.headFunc(repo)
 	if err != nil {
-		return global.LogError(fmt.Sprintf("failed to return HEAD: %v", err))
+		msg := fmt.Sprintf("failed to return HEAD: %v", err)
+		log.Error().Msgf("PushFiles() - %s", msg)
+		return errors.New(msg)
 	}
 
 	w, err := g.workTreeFunc(repo)
 	if err != nil {
-		return global.LogError(fmt.Sprintf("failed to return worktree: %v", err))
+		msg := fmt.Sprintf("failed to return worktree: %v", err)
+		log.Error().Msgf("PushFiles() - %s", msg)
+		return errors.New(msg)
 	}
 
 	err = g.addGlobFunc(w, ".")
 	if err != nil {
-		return global.LogError(fmt.Sprintf("failed to add . to git: %v", err))
+		msg := fmt.Sprintf("failed to add . to git: %v", err)
+		log.Error().Msgf("PushFiles() - %s", msg)
+		return errors.New(msg)
 	}
 
 	_, err = g.statusFunc(w)
 	if err != nil {
-		return global.LogError(fmt.Sprintf("failed to get status: %v", err))
+		msg := fmt.Sprintf("failed to get status: %v", err)
+		log.Error().Msgf("PushFiles() - %s", msg)
+		return errors.New(msg)
 	}
 
 	commit, err := g.commitFunc(w, "Adding GP as per idp-cfs contract", &git.CommitOptions{
@@ -146,7 +166,9 @@ func (g *GitClient) PushFiles(repo *git.Repository, auth *GitClientAuth) error {
 	})
 
 	if err != nil {
-		return global.LogError(fmt.Sprintf("failed to commit: %v", err))
+		msg := fmt.Sprintf("failed to commit: %v", err)
+		log.Error().Msgf("PushFiles() - %s", msg)
+		return errors.New(msg)
 	}
 
 	log.Info().Msgf("Files Commit. %v", commit)
@@ -166,7 +188,9 @@ func (g *GitClient) PushFiles(repo *git.Repository, auth *GitClientAuth) error {
 	}
 
 	if err != nil {
-		return global.LogError(fmt.Sprintf("failed for push commit changes: %v", err))
+		msg := fmt.Sprintf("failed for push commit changes: %v", err)
+		log.Error().Msgf("PushFiles() - %s", msg)
+		return errors.New(msg)
 	}
 
 	return nil
@@ -175,10 +199,10 @@ func (g *GitClient) PushFiles(repo *git.Repository, auth *GitClientAuth) error {
 func GetAuth(user, token string) *GitClientAuth {
 
 	if user == "" && token == "" {
-		log.Warn().Msg("Git getAuth - No basic auth env defined.")
+		log.Warn().Msg("GetAuth() - No basic auth env defined.")
 		return nil
 	} else {
-		log.Info().Msg("Git getAuth - Basic auth env defined")
+		log.Info().Msg("GetAuth() - Basic auth env defined")
 		return &GitClientAuth{
 			User:  user,
 			Token: token,
@@ -190,7 +214,7 @@ func (g *GitClient) getRefForBranch(r *git.Repository, branchName string) *plumb
 	var res *plumbing.Reference
 
 	if r == nil {
-		log.Error().Msg("Repository is nil.")
+		log.Error().Msg("getRefForBranch() - Repository is nil.")
 		return nil
 	}
 
@@ -198,14 +222,14 @@ func (g *GitClient) getRefForBranch(r *git.Repository, branchName string) *plumb
 	err := refs.ForEach(func(ref *plumbing.Reference) error {
 
 		if ref.Type() == plumbing.HashReference && ref.Name().String() == branchName {
-			log.Info().Msgf(" - Ref Found for branch: %+v", ref)
+			log.Info().Msgf("getRefForBranch() - Ref Found for branch: %+v", ref)
 			res = ref
 		}
 
 		return nil
 	})
 	if err != nil {
-		log.Error().Msgf("Error going through git refs: %v", err)
+		log.Error().Msgf("getRefForBranch() - Error going through git refs: %v", err)
 	}
 
 	return res
