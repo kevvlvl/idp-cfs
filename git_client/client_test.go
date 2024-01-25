@@ -141,9 +141,11 @@ func TestGitClient_PushFilesSrcDstExistNoGlob_Error(t *testing.T) {
 	// Mock git functions to return expected results = nil errors
 	g.headFunc = getValidHeadFunc()
 	g.workTreeFunc = getValidWorkTree()
+
 	g.addGlobFunc = func(w *git.Worktree, glob string) error {
 		return errors.New("test error")
 	}
+
 	g.statusFunc = getValidStatusFunc()
 	g.commitFunc = getValidCommitFunc()
 	g.pushFunc = getValidPushFunc()
@@ -154,6 +156,76 @@ func TestGitClient_PushFilesSrcDstExistNoGlob_Error(t *testing.T) {
 	err := g.PushFiles(&r, auth)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "failed to add . to git")
+}
+
+func TestGitClient_PushFilesSrcDstExistNoStatus_Error(t *testing.T) {
+
+	g := GetGitClient()
+
+	// Mock git functions to return expected results = nil errors
+	g.headFunc = getValidHeadFunc()
+	g.workTreeFunc = getValidWorkTree()
+	g.addGlobFunc = getValidGlobFunc()
+
+	g.statusFunc = func(w *git.Worktree) (git.Status, error) {
+		return nil, errors.New("test error")
+	}
+
+	g.commitFunc = getValidCommitFunc()
+	g.pushFunc = getValidPushFunc()
+
+	r := git.Repository{}
+	auth := GetAuth("testUser", "testToken")
+
+	err := g.PushFiles(&r, auth)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "failed to get status")
+}
+
+func TestGitClient_PushFilesSrcDstExistNoCommit_Error(t *testing.T) {
+
+	g := GetGitClient()
+
+	// Mock git functions to return expected results = nil errors
+	g.headFunc = getValidHeadFunc()
+	g.workTreeFunc = getValidWorkTree()
+	g.addGlobFunc = getValidGlobFunc()
+	g.statusFunc = getValidStatusFunc()
+
+	g.commitFunc = func(w *git.Worktree, msg string, opts *git.CommitOptions) (plumbing.Hash, error) {
+		return plumbing.Hash{}, errors.New("test error")
+	}
+
+	g.pushFunc = getValidPushFunc()
+
+	r := git.Repository{}
+	auth := GetAuth("testUser", "testToken")
+
+	err := g.PushFiles(&r, auth)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "failed to commit")
+}
+
+func TestGitClient_PushFilesSrcDstExistNoPush_Error(t *testing.T) {
+
+	g := GetGitClient()
+
+	// Mock git functions to return expected results = nil errors
+	g.headFunc = getValidHeadFunc()
+	g.workTreeFunc = getValidWorkTree()
+	g.addGlobFunc = getValidGlobFunc()
+	g.statusFunc = getValidStatusFunc()
+	g.commitFunc = getValidCommitFunc()
+	g.pushFunc = func(r *git.Repository, o *git.PushOptions) error {
+		return errors.New("test error")
+	}
+
+	r := git.Repository{}
+	auth := GetAuth("testUser", "testToken")
+
+	err := g.PushFiles(&r, auth)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "failed for push commit")
 }
 
 func getValidHeadFunc() func(r *git.Repository) (*plumbing.Reference, error) {
