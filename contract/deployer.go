@@ -102,7 +102,10 @@ func (s *State) Deploy() (IdpStatus, error) {
 			}
 
 		case global.UpdateCode:
+
 			// TODO Update repo
+			// TODO push golden path into a new feature branch
+			// TODO create a pull request from the new feature to the target branch (if specified in the contract)
 		default:
 			unexpectedResult(fmt.Sprintf("Deploy() - Action = %s", s.Contract.Action))
 		}

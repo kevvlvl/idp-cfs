@@ -32,6 +32,9 @@ func (g *GithubApi) ValidateNewCode(repoName string) error {
 }
 
 func (g *GithubApi) ValidateUpdateCode(repoName string) error {
+
+	// TODO Verify if the code repo exist (HTTP 2xx) anything else = error
+
 	return nil
 }
 
