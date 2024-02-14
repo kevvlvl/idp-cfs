@@ -1,5 +1,5 @@
 # Possible actions: new-code, update-code
-action: new-code
+action: update-code
 
 code:
   # Possible options: github, gitlab, gitea

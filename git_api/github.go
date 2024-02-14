@@ -77,12 +77,12 @@ func (g *GithubApi) PushGoldenPath(url, pathDir, branch, gpWorkdir, codeWorkDir 
 	return pushGoldenPath(ToolGithub, *g.repository.CloneURL, *g.repository.DefaultBranch, url, pathDir, branch, gpWorkdir, codeWorkDir, tag)
 }
 
-func GetGithubCodeClient(url string) *GithubApi {
+func GetGithubCodeClient() *GithubApi {
 
 	auth := getAuth(ToolGithub)
 
-	if auth == nil && url != "" {
-		log.Error().Msg("GetGithubCodeClient() - Cannot return client without auth info for on-premise Github")
+	if auth == nil {
+		log.Error().Msg("GetGithubCodeClient() - Cannot return github client without auth info")
 		return nil
 	}
 
@@ -93,12 +93,12 @@ func GetGithubCodeClient(url string) *GithubApi {
 	}
 }
 
-func GetGithubGpClient(url string) *GithubApi {
+func GetGithubGpClient() *GithubApi {
 
 	auth := getAuth(ToolGithub)
 
-	if auth == nil && url != "" {
-		log.Error().Msg("GetGithubGpClient() - Cannot return client without auth info for on-premise Github")
+	if auth == nil {
+		log.Error().Msg("GetGithubGpClient() - Cannot return github client without auth info")
 		return nil
 	}
 

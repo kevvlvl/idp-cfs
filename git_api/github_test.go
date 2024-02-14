@@ -103,6 +103,6 @@ func TestCreateRepository_CreateFileNil_Error(t *testing.T) {
 
 func TestGetGithubGpClient_NoErrors(t *testing.T) {
 
-	client := GetGithubGpClient("https://unittest-local-git.local")
+	client := GetGithubGpClient()
 	assert.NotNil(t, client)
 }

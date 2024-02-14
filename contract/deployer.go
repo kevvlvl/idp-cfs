@@ -25,7 +25,7 @@ func GetState(dryRun bool, contractFilePath string) *State {
 	case global.ToolGitlab:
 		state.Code = git_api.GetGitlabCodeClient(*c.Code.Url)
 	case global.ToolGithub:
-		state.Code = git_api.GetGithubCodeClient(*c.Code.Url)
+		state.Code = git_api.GetGithubCodeClient()
 
 	default:
 		unexpectedResult(fmt.Sprintf("GetState() - Tool = %s", c.Code.Tool))
@@ -35,7 +35,7 @@ func GetState(dryRun bool, contractFilePath string) *State {
 	case global.ToolGitlab:
 		state.GoldenPath = git_api.GetGitlabGpClient(c.GoldenPath.Url)
 	case global.ToolGithub:
-		state.GoldenPath = git_api.GetGithubGpClient(c.GoldenPath.Url)
+		state.GoldenPath = git_api.GetGithubGpClient()
 	default:
 		unexpectedResult(fmt.Sprintf("GetState() - Tool = %s", c.GoldenPath.Tool))
 	}
