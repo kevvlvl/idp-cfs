@@ -151,6 +151,9 @@ func getGithubClient(authToken string) *GithubApi {
 			_, _, err := c.Repositories.CreateFile(ctx, owner, repo, path, opts)
 			return err
 		},
+		createRefFunc: func(ctx context.Context, c *github.Client, owner string, repo string, ref *github.Reference) (*github.Reference, *github.Response, error) {
+			return c.Git.CreateRef(ctx, owner, repo, ref)
+		},
 	}
 }
 
@@ -223,7 +226,7 @@ func (g *GithubApi) updateRepository(repoName, newGpBranch string) error {
 		return err
 	}
 
-	_, resp, err = g.client.Git.CreateRef(g.ctx, *g.user.Login, repoName, &github.Reference{
+	_, resp, err = g.createRefFunc(g.ctx, g.client, *g.user.Login, repoName, &github.Reference{
 		Ref: global.StringPtr("refs/heads/" + newGpBranch),
 		Object: &github.GitObject{
 			SHA: mainRef.Object.SHA,

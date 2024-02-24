@@ -23,6 +23,7 @@ type GithubApi struct {
 	getRepoFunc    func(ctx context.Context, c *github.Client, owner, repo string) (*github.Repository, *github.Response, error)
 	createRepoFunc func(ctx context.Context, c *github.Client, org string, repo *github.Repository) (*github.Repository, *github.Response, error)
 	createFileFunc func(ctx context.Context, c *github.Client, owner, repo, path string, opts *github.RepositoryContentFileOptions) error
+	createRefFunc  func(ctx context.Context, c *github.Client, owner string, repo string, ref *github.Reference) (*github.Reference, *github.Response, error)
 }
 
 type GitlabApi struct {
