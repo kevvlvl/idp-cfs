@@ -103,9 +103,15 @@ func (s *State) Deploy() (IdpStatus, error) {
 
 		case global.UpdateCode:
 
-			// TODO Update repo
-			// TODO push golden path into a new feature branch
-			// TODO create a pull request from the new feature to the target branch (if specified in the contract)
+			// 1. Update the code repo by creating and pushing a new branch
+			if err := s.Code.UpdateRepo(s.Contract.Code.Repo, "feat/gp-upgrade"); err != nil {
+				return IdpStatusFailure, err
+			}
+
+			// 2. Push Golden Path in that newly created branch
+
+			// 3. Create a PR from branch to main branch
+
 		default:
 			unexpectedResult(fmt.Sprintf("Deploy() - Action = %s", s.Contract.Action))
 		}

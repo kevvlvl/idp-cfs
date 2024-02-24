@@ -76,6 +76,18 @@ func (g *GithubApi) CreateRepo(repoName string) error {
 	return nil
 }
 
+func (g *GithubApi) UpdateRepo(repoName string, newGpBranch string) error {
+
+	err := g.updateRepository(repoName, newGpBranch)
+	if err != nil {
+		return err
+	}
+
+	g.repository, _, _ = g.getRepoFunc(g.ctx, g.client, *g.user.Login, repoName)
+
+	return nil
+}
+
 func (g *GithubApi) PushGoldenPath(url, pathDir, branch, gpWorkdir, codeWorkDir string, tag *string) error {
 	return pushGoldenPath(ToolGithub, *g.repository.CloneURL, *g.repository.DefaultBranch, url, pathDir, branch, gpWorkdir, codeWorkDir, tag)
 }
@@ -195,6 +207,34 @@ func (g *GithubApi) createRepository(repo string) (*github.Repository, error) {
 	}
 
 	return r, nil
+}
+
+func (g *GithubApi) updateRepository(repoName, newGpBranch string) error {
+
+	log.Info().Msgf("updateRepository() - Update the repo %s by creating a new branch %s", repoName, newGpBranch)
+
+	if !hasAuthUser(g.user) {
+		return errors.New("not authenticated")
+	}
+
+	mainRef, resp, err := g.client.Git.GetRef(g.ctx, *g.user.Login, repoName, "refs/heads/main")
+	err = global.ValidateApiResponse(resp.Response, err, "Error trying to get repo main branch ref")
+	if err != nil {
+		return err
+	}
+
+	_, resp, err = g.client.Git.CreateRef(g.ctx, *g.user.Login, repoName, &github.Reference{
+		Ref: global.StringPtr("refs/heads/" + newGpBranch),
+		Object: &github.GitObject{
+			SHA: mainRef.Object.SHA,
+		},
+	})
+	err = global.ValidateApiResponse(resp.Response, err, "Error trying to create branch for repository")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (g *GithubApi) getRepository(repoName string) (*github.Repository, error) {

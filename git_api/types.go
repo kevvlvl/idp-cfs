@@ -12,6 +12,7 @@ type GitSource interface {
 	ValidateGoldenPath(url, branch, workDir string) error
 	CreateRepo(repoName string) error
 	PushGoldenPath(url, pathDir, branch, gpWorkdir, codeWorkDir string, tag *string) error
+	UpdateRepo(repoName string, newGpBranch string) error
 }
 
 type GithubApi struct {
