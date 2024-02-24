@@ -78,8 +78,13 @@ func (g *GitlabApi) UpdateRepo(repoName string, newGpBranch string) error {
 	return nil
 }
 
-func (g *GitlabApi) PushGoldenPath(url, pathDir, branch, gpWorkdir, codeWorkDir string, tag *string) error {
-	return pushGoldenPath(ToolGitlab, g.project.WebURL, g.project.DefaultBranch, url, pathDir, branch, gpWorkdir, codeWorkDir, tag)
+func (g *GitlabApi) PushGoldenPath(url, pathDir, codeBranch, branch, gpWorkdir, codeWorkDir string, tag *string) error {
+
+	if codeBranch == "" {
+		codeBranch = g.project.DefaultBranch
+	}
+
+	return pushGoldenPath(ToolGitlab, g.project.WebURL, codeBranch, url, pathDir, branch, gpWorkdir, codeWorkDir, tag)
 }
 
 func GetGitlabCodeClient(url string) *GitlabApi {

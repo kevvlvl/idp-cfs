@@ -94,6 +94,7 @@ func (s *State) Deploy() (IdpStatus, error) {
 			// 2. If the Golden Path repo is defined, push that code in the code repo
 			if err := s.Code.PushGoldenPath(s.Contract.GoldenPath.Url,
 				s.Contract.GoldenPath.Path,
+				"",
 				s.Contract.GoldenPath.Branch,
 				*s.Contract.GoldenPath.Workdir,
 				*s.Contract.Code.Workdir,
@@ -103,12 +104,23 @@ func (s *State) Deploy() (IdpStatus, error) {
 
 		case global.UpdateCode:
 
+			featBranch := "feat/gp-upgrade"
+
 			// 1. Update the code repo by creating and pushing a new branch
-			if err := s.Code.UpdateRepo(s.Contract.Code.Repo, "feat/gp-upgrade"); err != nil {
+			if err := s.Code.UpdateRepo(s.Contract.Code.Repo, featBranch); err != nil {
 				return IdpStatusFailure, err
 			}
 
 			// 2. Push Golden Path in that newly created branch
+			if err := s.Code.PushGoldenPath(s.Contract.GoldenPath.Url,
+				s.Contract.GoldenPath.Path,
+				featBranch,
+				s.Contract.GoldenPath.Branch,
+				*s.Contract.GoldenPath.Workdir,
+				*s.Contract.Code.Workdir,
+				s.Contract.GoldenPath.Tag); err != nil {
+				return IdpStatusFailure, err
+			}
 
 			// 3. Create a PR from branch to main branch
 
