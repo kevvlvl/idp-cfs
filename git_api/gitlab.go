@@ -78,6 +78,13 @@ func (g *GitlabApi) UpdateRepo(repoName string, newGpBranch string) error {
 	return nil
 }
 
+func (g *GitlabApi) OpenPullRequest(repoName, refBranch, baseBranch string) error {
+
+	// TODO: implement
+
+	return nil
+}
+
 func (g *GitlabApi) PushGoldenPath(url, pathDir, codeBranch, branch, gpWorkdir, codeWorkDir string, tag *string) error {
 
 	if codeBranch == "" {

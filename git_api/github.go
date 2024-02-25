@@ -67,23 +67,55 @@ func (g *GithubApi) ValidateGoldenPath(url, branch, workDir string) error {
 
 func (g *GithubApi) CreateRepo(repoName string) error {
 
+	log.Info().Msgf("CreateRepo() - Create repository: %s", repoName)
+
 	newCodeRepo, err := g.createRepository(repoName)
 	g.repository = newCodeRepo
 	if err != nil {
 		return err
 	}
 
+	log.Info().Msg("CreateRepo() - Created repository")
+
 	return nil
 }
 
 func (g *GithubApi) UpdateRepo(repoName string, newGpBranch string) error {
 
-	err := g.updateRepository(repoName, newGpBranch)
+	log.Info().Msgf("UpdateRepo() - Update repository: %s to create branch %s", repoName, newGpBranch)
+
+	err := g.createBranch(repoName, newGpBranch)
 	if err != nil {
 		return err
 	}
 
 	g.repository, _, _ = g.getRepoFunc(g.ctx, g.client, *g.user.Login, repoName)
+
+	log.Info().Msg("UpdateRepo() - Updated repository")
+
+	return nil
+}
+
+func (g *GithubApi) OpenPullRequest(repoName, refBranch, baseBranch string) error {
+
+	log.Info().Msgf("OpenPullRequest() - Open Pull Request for repo %s from branch %s to branch %s", repoName, refBranch, baseBranch)
+
+	newPr := &github.NewPullRequest{
+		Title:               global.StringPtr("Golden Path Update by idp-cfs"),
+		Head:                global.StringPtr(refBranch),
+		HeadRepo:            global.StringPtr(repoName),
+		Base:                global.StringPtr(baseBranch),
+		Body:                global.StringPtr("Golden Path Update updated by idp-cfs"),
+		MaintainerCanModify: github.Bool(true),
+	}
+
+	pr, resp, err := g.createPrFunc(g.ctx, g.client, *g.user.Login, repoName, newPr)
+	err = global.ValidateApiResponse(resp.Response, err, "getGithubClient() - Error trying to get User")
+	if err != nil {
+		return err
+	}
+
+	log.Info().Msgf("OpenPullRequest() - Created Pull Request %+v", pr)
 
 	return nil
 }
@@ -159,6 +191,9 @@ func getGithubClient(authToken string) *GithubApi {
 		createRefFunc: func(ctx context.Context, c *github.Client, owner string, repo string, ref *github.Reference) (*github.Reference, *github.Response, error) {
 			return c.Git.CreateRef(ctx, owner, repo, ref)
 		},
+		createPrFunc: func(ctx context.Context, c *github.Client, owner string, repo string, pull *github.NewPullRequest) (*github.PullRequest, *github.Response, error) {
+			return c.PullRequests.Create(ctx, owner, repo, pull)
+		},
 	}
 }
 
@@ -175,6 +210,12 @@ func getGithubClientWithoutAuth() *GithubApi {
 		createFileFunc: func(ctx context.Context, c *github.Client, owner, repo, path string, opts *github.RepositoryContentFileOptions) error {
 			_, _, err := c.Repositories.CreateFile(ctx, owner, repo, path, opts)
 			return err
+		},
+		createRefFunc: func(ctx context.Context, c *github.Client, owner string, repo string, ref *github.Reference) (*github.Reference, *github.Response, error) {
+			return c.Git.CreateRef(ctx, owner, repo, ref)
+		},
+		createPrFunc: func(ctx context.Context, c *github.Client, owner string, repo string, pull *github.NewPullRequest) (*github.PullRequest, *github.Response, error) {
+			return c.PullRequests.Create(ctx, owner, repo, pull)
 		},
 	}
 }
@@ -217,9 +258,9 @@ func (g *GithubApi) createRepository(repo string) (*github.Repository, error) {
 	return r, nil
 }
 
-func (g *GithubApi) updateRepository(repoName, newGpBranch string) error {
+func (g *GithubApi) createBranch(repoName, newBranch string) error {
 
-	log.Info().Msgf("updateRepository() - Update the repo %s by creating a new branch %s", repoName, newGpBranch)
+	log.Info().Msgf("createBranch() - Update the repo %s by creating a new branch %s", repoName, newBranch)
 
 	if !hasAuthUser(g.user) {
 		return errors.New("not authenticated")
@@ -232,7 +273,7 @@ func (g *GithubApi) updateRepository(repoName, newGpBranch string) error {
 	}
 
 	_, resp, err = g.createRefFunc(g.ctx, g.client, *g.user.Login, repoName, &github.Reference{
-		Ref: global.StringPtr("refs/heads/" + newGpBranch),
+		Ref: global.StringPtr("refs/heads/" + newBranch),
 		Object: &github.GitObject{
 			SHA: mainRef.Object.SHA,
 		},

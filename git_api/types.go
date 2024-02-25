@@ -13,6 +13,7 @@ type GitSource interface {
 	CreateRepo(repoName string) error
 	PushGoldenPath(url, pathDir, codeBranch, branch, gpWorkdir, codeWorkDir string, tag *string) error
 	UpdateRepo(repoName string, newGpBranch string) error
+	OpenPullRequest(repoName, refBranch, baseBranch string) error
 }
 
 type GithubApi struct {
@@ -24,6 +25,7 @@ type GithubApi struct {
 	createRepoFunc func(ctx context.Context, c *github.Client, org string, repo *github.Repository) (*github.Repository, *github.Response, error)
 	createFileFunc func(ctx context.Context, c *github.Client, owner, repo, path string, opts *github.RepositoryContentFileOptions) error
 	createRefFunc  func(ctx context.Context, c *github.Client, owner string, repo string, ref *github.Reference) (*github.Reference, *github.Response, error)
+	createPrFunc   func(ctx context.Context, c *github.Client, owner string, repo string, pull *github.NewPullRequest) (*github.PullRequest, *github.Response, error)
 }
 
 type GitlabApi struct {

@@ -123,6 +123,9 @@ func (s *State) Deploy() (IdpStatus, error) {
 			}
 
 			// 3. Create a PR from branch to main branch
+			if err := s.Code.OpenPullRequest(s.Contract.Code.Repo, featBranch, s.Contract.Code.Branch); err != nil {
+				return IdpStatusFailure, err
+			}
 
 		default:
 			unexpectedResult(fmt.Sprintf("Deploy() - Action = %s", s.Contract.Action))
