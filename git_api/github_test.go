@@ -36,7 +36,7 @@ func getStubUser() *github.User {
 	}
 }
 
-func getStubValidResponse(code int) *github.Response {
+func getStubGithubResponse(code int) *github.Response {
 	return &github.Response{
 		Response: &http.Response{
 			StatusCode: code,
@@ -47,7 +47,7 @@ func getStubValidResponse(code int) *github.Response {
 func TestGetRepository_ValidRepoWithOrg_NoError(t *testing.T) {
 
 	mockRepository := getStubRepositoryWithOrg()
-	mockResponse := getStubValidResponse(200)
+	mockResponse := getStubGithubResponse(200)
 
 	c := getGithubClientWithoutAuth()
 	c.user = getStubUser()
@@ -71,7 +71,7 @@ func TestCreateRepository_Valid_NoError(t *testing.T) {
 	c := getGithubClientWithoutAuth()
 	c.user = getStubUser()
 	c.createRepoFunc = func(ctx context.Context, c *github.Client, org string, repo *github.Repository) (*github.Repository, *github.Response, error) {
-		return getStubRepositoryWithOrg(), getStubValidResponse(200), nil
+		return getStubRepositoryWithOrg(), getStubGithubResponse(200), nil
 	}
 
 	c.createFileFunc = func(ctx context.Context, c *github.Client, owner, repo, path string, opts *github.RepositoryContentFileOptions) error {
@@ -88,7 +88,7 @@ func TestCreateRepository_CreateFileNil_Error(t *testing.T) {
 	c := getGithubClientWithoutAuth()
 	c.user = getStubUser()
 	c.createRepoFunc = func(ctx context.Context, c *github.Client, org string, repo *github.Repository) (*github.Repository, *github.Response, error) {
-		return getStubRepositoryWithOrg(), getStubValidResponse(200), nil
+		return getStubRepositoryWithOrg(), getStubGithubResponse(200), nil
 	}
 
 	c.createFileFunc = func(ctx context.Context, c *github.Client, owner, repo, path string, opts *github.RepositoryContentFileOptions) error {

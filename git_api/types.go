@@ -29,8 +29,11 @@ type GithubApi struct {
 }
 
 type GitlabApi struct {
-	client  *gitlab.Client
-	project *gitlab.Project
+	client            *gitlab.Client
+	project           *gitlab.Project
+	newClientFunc     func(token string, options ...gitlab.ClientOptionFunc) (*gitlab.Client, error)
+	getProjectFunc    func(c *gitlab.Client, pid interface{}, opt *gitlab.GetProjectOptions, options ...gitlab.RequestOptionFunc) (*gitlab.Project, *gitlab.Response, error)
+	createProjectFunc func(c *gitlab.Client, opt *gitlab.CreateProjectOptions, options ...gitlab.RequestOptionFunc) (*gitlab.Project, *gitlab.Response, error)
 }
 
 type GitApiAuth struct {

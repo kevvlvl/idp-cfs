@@ -12,7 +12,7 @@ import (
 
 func (g *GitlabApi) ValidateNewCode(repoName string) error {
 
-	project, err := getProject(g.client, repoName)
+	project, err := g.getProject(repoName)
 
 	if project == nil && err != nil {
 		log.Info().Msgf("ValidateNewCode() - Project %s does not exist.", repoName)
@@ -22,8 +22,9 @@ func (g *GitlabApi) ValidateNewCode(repoName string) error {
 		log.Warn().Msgf("ValidateNewCode() - %s", repoFound)
 		return errors.New(repoFound)
 	} else {
-		log.Error().Msgf("ValidateNewCode() - Unexpected error returned: %v", err)
-		return err
+		msg := fmt.Sprintf("unexpected error returned: %v, err", err)
+		log.Error().Msg("ValidateNewCode() - " + msg)
+		return errors.New(msg)
 	}
 }
 
@@ -60,7 +61,7 @@ func (g *GitlabApi) ValidateGoldenPath(url, branch, workDir string) error {
 
 func (g *GitlabApi) CreateRepo(repoName string) error {
 
-	p, err := createProject(g.client, repoName)
+	p, err := g.createProject(repoName)
 	if err != nil {
 		log.Error().Msgf("CreateRepo() - Failed to Create Gitlab Project: %v", err)
 		return err
@@ -105,6 +106,12 @@ func GetGitlabCodeClient(url string) *GitlabApi {
 	if auth.codeDefined {
 		return &GitlabApi{
 			client: getClient(url, auth.codeToken),
+			getProjectFunc: func(c *gitlab.Client, pid interface{}, opt *gitlab.GetProjectOptions, options ...gitlab.RequestOptionFunc) (*gitlab.Project, *gitlab.Response, error) {
+				return c.Projects.GetProject(pid, opt, options...)
+			},
+			createProjectFunc: func(c *gitlab.Client, opt *gitlab.CreateProjectOptions, options ...gitlab.RequestOptionFunc) (*gitlab.Project, *gitlab.Response, error) {
+				return c.Projects.CreateProject(opt, options...)
+			},
 		}
 	}
 
@@ -139,24 +146,26 @@ func getClient(url, token string) *gitlab.Client {
 	return c
 }
 
-func getProject(g *gitlab.Client, projectName string) (*gitlab.Project, error) {
+func (g *GitlabApi) getProject(projectName string) (*gitlab.Project, error) {
 
-	p, resp, err := g.Projects.GetProject(projectName, nil)
+	p, resp, err := g.getProjectFunc(g.client, projectName, nil)
 	err = global.ValidateApiResponse(resp.Response, err, "Error trying to get project")
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info().Msgf("getProject() - Found Project: %s", p.Name)
+	if p != nil {
+		log.Info().Msgf("getProject() - Found Project: %s", p.Name)
+	}
 
 	return p, nil
 }
 
-func createProject(g *gitlab.Client, projectName string) (*gitlab.Project, error) {
+func (g *GitlabApi) createProject(projectName string) (*gitlab.Project, error) {
 
 	log.Info().Msgf("createProject() - START Gitlab createProject: %s", projectName)
 
-	p, err := getProject(g, projectName)
+	p, err := g.getProject(projectName)
 
 	if err == nil {
 		msg := "found a Gitlab project with the name. Cannot create a new project"
@@ -169,7 +178,7 @@ func createProject(g *gitlab.Client, projectName string) (*gitlab.Project, error
 			DefaultBranch: global.StringPtr("main"),
 		}
 
-		newProject, resp, err := g.Projects.CreateProject(opts)
+		newProject, resp, err := g.createProjectFunc(g.client, opts)
 		err = global.ValidateApiResponse(resp.Response, err, "Error trying to create project")
 		if err != nil {
 			return nil, err
